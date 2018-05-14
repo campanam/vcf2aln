@@ -2,7 +2,8 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-# Michael G. Campana, Jacob A. West-Roberts, 2017
+VCF2ALNVER = "0.3.0"
+# Michael G. Campana, Jacob A. West-Roberts, 2017-2018
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
 
@@ -22,10 +23,10 @@ class Locus
 		@missinghap2 = []
 		unless @name == ""
 			for sample in $samples
-				File.open(sample + "_#{@name}.hap1.tmp.fa", 'w') do |write|
+				File.open(sample + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'w') do |write|
 					write.puts ">" + sample + "_hap1"
 				end
-				File.open(sample + "_#{@name}.hap2.tmp.fa", 'w') do |write|
+				File.open(sample + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'w') do |write|
 					write.puts ">" + sample + "_hap2"
 				end
 				@missinghap1.push(0)
@@ -34,14 +35,13 @@ class Locus
 		end
 	end
 	def write_seqs
-
 		@length += @seqs[0].length
 		for i in 0...$samples.size
-			File.open($samples[i] + "_#{@name}.hap1.tmp.fa", 'a') do |write|
+			File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
 				write << @seqs[i]
 			end
 			unless $options.hap_flag
-				File.open($samples[i] + "_#{@name}.hap2.tmp.fa", 'a') do |write|
+				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
 					write << @alts[i]
 				end
 			end
@@ -52,99 +52,80 @@ class Locus
 				end
 			end
 			@seqs[i] = ""
-			unless $options.hap_flag
-				@alts[i] = ""
-			end
+			@alts[i] = "" unless $options.hap_flag
 		end
 	end
-
-
-
 	def print_locus(line_num)
-		print "print_locus called at line #{line_num}", "\n"
+		#print "print_locus called at line #{line_num}", "\n"
 		@length += @seqs[0].length
 		if $options.split_regions == 0
 			for i in 0...$samples.size
-				File.open($samples[i] + "_#{@name}.hap1.tmp.fa", 'a') do |write|
+				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
 					write.puts @seqs[i]
 				end
 				unless $options.hap_flag
-					File.open($samples[i] + "_#{@name}.hap2.tmp.fa", 'a') do |write|
+					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
 						write.puts @alts[i]
 					end
 				end
-
 				if $options.maxmissing < 100.0
 					@missinghap1[i] += @seqs[i].scan("?").length
-					unless $options.hap_flag
-						@missinghap2[i] += @seqs[i].scan("?").length
-					end
-					system("rm #{$samples[i] + '_' + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-					unless $options.hap_flag
-						system("rm #{$samples[i] + '_' + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-					end
+					@missinghap2[i] += @seqs[i].scan("?").length unless $options.hap_flag
+					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing unless $options.hap_flag
 				end
 			end
 			if $options.alts
-				system("cat *#{@name}*.tmp.fa > #{@name + '.fa'}")
+				system("cat *#{$options.outprefix + @name}*.tmp.fa > #{$options.outprefix + @name + '.fa'}")
 			else
-				system("cat *#{@name}.hap1.tmp.fa > #{@name + '.hap1.fa'}")
-				unless $options.hap_flag
-					system("cat *#{@name}.hap2.tmp.fa > #{@name + '.hap2.fa'}")
-				end
+				system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '.hap1.fa'}")
+				system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '.hap2.fa'}") unless $options.hap_flag
 			end
-			system("rm *#{@name}*.tmp.fa")
+			system("rm *#{$options.outprefix + @name}*.tmp.fa")
 		else
 			for i in 0...$samples.size
-				File.open($samples[i] + "_#{@name}.hap1.tmp.fa", 'a') do |write|
+				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
 					write.puts @seqs[i]
 				end
 				unless $options.hap_flag
-					File.open($samples[i] + "_#{@name}.hap2.tmp.fa", 'a') do |write|
+					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
 						write.puts @alts[i]
 					end
 				end
-
 				if $options.maxmissing < 100.0
 					@missinghap1[i] += @seqs[i].scan("?").length
-					unless $options.hap_flag
-						@missinghap2[i] += @seqs[i].scan("?").length
-					end
-					system("rm #{$samples[i] + '_' + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-					unless $options.hap_flag
-						system("rm #{$samples[i] + '_' + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-					end
+					@missinghap2[i] += @seqs[i].scan("?").length unless $options.hap_flag
+					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing unless $options.hap_flag
 				end
 			end
 			if $options.alts
-			system("cat *#{@name}*.tmp.fa > #{@name + '.fa'}")
+				system("cat *#{$options.outprefix + @name}*.tmp.fa > #{$options.outprefix + @name + '.fa'}")
 			else
-				system("cat *#{@name}.hap1.tmp.fa > #{@name + '_region' + $num_regions.to_s + '.hap1.fa'}")
-				unless $options.hap_flag
-					system("cat *#{@name}.hap2.tmp.fa > #{@name + '_region' + $num_regions.to_s + '.hap2.fa'}")
-				end
+				system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.hap1.fa'}")
+				system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.hap2.fa'}") unless $options.hap_flag
 			end
-			system("rm *#{@name}*.tmp.fa")
+			system("rm *#{$options.outprefix + @name}*.tmp.fa")
 			$num_regions += 1
 		end
 	end
 end
-
 #-----------------------------------------------------------------------------------------------
 class Parser
 	def self.parse(options)
 		# Set defaults
 		args = OpenStruct.new
 		args.infile = "" # Primary input file
+		args.outprefix = "" # Output prefix
 		args.hap_flag = false
 		args.concat = false # Concatenate markers into single alignment
 		args.skip = false # Skip missing sites in vcf
 		args.mincalls = 0 # Minimum number of calls to include site
 		args.maxmissing = 100.0 # Maximum percent missing data to include sequence
 		args.alts = false # Print alternate haplotypes in same file
-		args.qual_filter = nil #Minimum quality for site (QUAL column)
+		args.qual_filter = 0 #Minimum quality for site (QUAL column)
 		args.site_depth = nil #Minimum site coverage depth
-		args.type_fields = nil #Don't display VCF genotype fields on default
+		args.type_fields = false #Don't display VCF genotype fields on default
 		args.sample_depth = 0 #Don't filter VCF calls based on depth by default
 		args.min_ll = nil #Don't filter likelihood on default
 		args.phred_likelihood = nil #Don't filter phred-scaled likelihoods (PL field) on default
@@ -157,14 +138,13 @@ class Parser
 		args.mqsb = nil # ^^
 		args.adepth = nil #Don't filter allele depth by default
 		args.split_regions = 0 #Don't activate region-split subroutine by default
-
-
-
-
 		opt_parser = OptionParser.new do |opts|
 			opts.banner = "Command-line usage: ruby vcf2aln.rb [options]"
 			opts.on("-i","--input [FILE]", String, "Input VCF file") do |vcf|
 				args.infile = vcf
+			end
+			opts.on("-o", "--outprefix [VALUE]", String, "Output alignment prefix") do |pref|
+				args.outprefix = pref + "_" if pref != nil
 			end
 			opts.on("-c", "--concatenate", "Concatenate markers into single alignment") do
 				args.concat = true
@@ -176,7 +156,7 @@ class Parser
 				args.mincalls = msnps if msnps != nil
 			end
 			opts.on("-x","--maxmissing [VALUE]", Float, "Maximum percent missing data to include sequence (Default = 100.0)") do |missing|
-				args.maxmissing = missing if !missing.nil?
+				args.maxmissing = missing if missing != nil
 			end
 			opts.on("-a", "--alts", "Print alternate haplotypes in same file") do
 				args.alts = true
@@ -185,49 +165,52 @@ class Parser
 				args.hap_flag = true
 			end
 			opts.on("-g", "--split_regions [VALUE]", Integer, "Split alignment into subregional alignments for phylogenetic analysis") do |regions|
-				args.split_regions = regions if !regions.nil?
+				args.split_regions = regions if regions != nil
 			end
 			opts.on("-t", "--typefields", "Display VCF genotype field information, then quit the program.") do
 				args.type_fields = true
 			end
-			opts.on("-q", "--qual_filter [VALUE]", Integer, "Minimum accepted value for QUAL (per site) (Default = No filter)") do |qual|
-				args.qual_filter = qual if !qual.nil?
+			opts.on("-q", "--qual_filter [VALUE]", Integer, "Minimum accepted value for QUAL (per site) (Default = 0)") do |qual|
+				args.qual_filter = qual if qual != nil
 			end
 			opts.on("-y", "--site_depth [VALUE]", Integer, "Minimum desired depth for each site (DP, in INFO) (Default = No filter)") do |site|
-				args.site_depth = site if !site.nil?
+				args.site_depth = site if site != nil
 			end
 			opts.on("-d", "--sampledepth [VALUE]", Integer, "Minimum allowed read depth (Default = No filter)") do |depth|
-				args.sample_depth = depth if !depth.nil?
+				args.sample_depth = depth if depth != nil
 			end
 			opts.on("-l", "--likelihood [VALUE]", Float, "Minimum allowed genotype log-likelihood (At least one option must satisfy this value)") do |likelihood|
-				args.min_ll = likelihood if !likelihood.nil?
+				args.min_ll = likelihood if likelihood != nil
 			end
 			opts.on("-p", "--phred [VALUE]", Integer, "Minimum accepted phred-scaled genotype likelihood (Default = No filter)") do |phreddy|
-				args.phred_likelihood = phreddy if !phreddy.nil?
+				args.phred_likelihood = phreddy if phreddy != nil
 			end
-			opts.on("-o", "--posterior [VALUE]", Float, "Minimum accepted phred-scaled genotype posterior probability (Default = No filter)") do |post|
-				args.posterior = post if !post.nil?
+			opts.on("-P", "--posterior [VALUE]", Float, "Minimum accepted phred-scaled genotype posterior probability (Default = No filter)") do |post|
+				args.posterior = post if post != nil
 			end
 			opts.on("-C", "--conditional [VALUE]", Float, "Minimum conditional genotype quality (phred-encoded) (Default = No filter)") do |condi|
-				args.conditional = condi if !condi.nil?
+				args.conditional = condi if condi != nil
 			end
 			opts.on("-H", "--haplotype_quality [VALUE]", Integer, "Minimum allowed haplotype quality (phred-encoded) (Default = No filter)") do |haplo|
-				args.hap_qual = haplo if !haplo.nil?
+				args.hap_qual = haplo if haplo != nil
 			end
 			opts.on("-r", "--sample_mq [VALUE]", Integer, "Minimum allowed per-sample RMS mapping quality (Default = No filter)") do |map_quality|
-				args.sample_mq = map_quality if !map_quality.nil?
+				args.sample_mq = map_quality if map_quality != nil
 			end
 			opts.on("-R", "--site_mq [VALUE]", Integer, "Minimum allowed per-site mapping quality (MQ in INFO) (Default = No filter)") do |mq|
-				args.site_mq = mq if !mq.nil?
+				args.site_mq = mq if mq != nil
 			end
 			opts.on("-F", "--mq0f [VALUE]", Float, "Maximum allowed value for MQ0F. Must be between 0 and 1. (Default = No filter)") do |mqf|
-				args.mq0f = mqf if !mqf.nil?
+				args.mq0f = mqf if mqf != nil
 			end
 			opts.on("-S", "--mqsb [VALUE]", Float, "Minimum allowed value for MQSB. (Default = No filter)") do |sb|
-				args.mqsb = sb if !sb.nil?
+				args.mqsb = sb if sb != nil
 			end
 			opts.on("-A", "--adepth [VALUE]", Integer, "Minimum allowed allele depth. (Default = No filter)") do |ad|
-				args.adepth = ad if !ad.nil?
+				args.adepth = ad if ad != nil
+			end
+			opts.on("-v", "--version", "Print program version.") do
+				abort("vcf2aln v." + VCF2ALNVER + "\n")
 			end
 			opts.on_tail("-h","--help", "Show help") do
 				puts opts
@@ -246,18 +229,11 @@ def quality_filter(line_arr)
 	site_info_fields = line_arr[7]
 	samples = line_arr[9..-1]
 	info_arr = site_info_fields.split(";")
-
 	samples.map!{ |element| element.split(":")}
-
 	genotypes = []
-	samples.each{|list|
-		genotypes.push(list[0])
-	}
+	samples.each{|list| genotypes.push(list[0])}
 
-	if genotypes.all? {|x| x == "./."}
-		return line_arr
-	end
-
+	return line_arr if genotypes.all? {|x| x == "./."}
 	found = false
 	
 	#if filter.to_s != "PASS" && filter.to_s != "."
@@ -316,21 +292,17 @@ def quality_filter(line_arr)
 		#This bit can be sped up by removing options from the index hash if the corresponding value in $options does not exist. 
 
 		for sample in samples do
-			if found == true
-				break
-			end
+			break if found
 			for field in sample_info_fields do
-				if found == true
-					break
-				end
+				break if found
 				case field
 				when "GT"
-				  next
+					next
 				when "DP"
-				 if $options.sample_depth && sample[index_hash["DP"]].to_i < $options.sample_depth
-					 found = true
-					 break
-				 end
+					if $options.sample_depth && sample[index_hash["DP"]].to_i < $options.sample_depth
+					 	found = true
+					 	break
+				 	end
 			  when "GL"
 			  		if $options.min_ll
 					 	gl_array = sample[index_hash["GL"]].split(",")
@@ -342,8 +314,7 @@ def quality_filter(line_arr)
 						end
 					end
 				when "GLE"
-					abort("GLE containing vcf files not supported as of version 0.1.0")
-					
+					abort("** GLE containing vcf files not supported as of version #{VCF2ALNVER} **")
 				when "PQ"
 					next
 				when "PL"
@@ -391,12 +362,8 @@ def quality_filter(line_arr)
 		end
 	end
 	
-	if found == true
-		genotypes.each { |genotype|
-			if genotype != "./."
-				genotype.replace("./.")
-			end
-		}
+	if found
+		genotypes.each { |genotype| genotype.replace("./.") if genotype != "./." }
 
 		new_samples = []
 		samples.each{|list|
@@ -413,36 +380,28 @@ def quality_filter(line_arr)
 end
 
 #-----------------------------------------------------------------------------------------------
-
 def get_GT_fields(vcf_file)
-
 	File.open(vcf_file, 'r') do |vcf2aln|
 		while line = vcf2aln.gets
-			if line[0..1] == "#C"
-				next
-			elsif line[0].chr != "#"
+			if line[0].chr != "#"
 				line_arr = line.split("\t")
 				gt_fields = line_arr[8].split(":")
 				puts "Genotype field information categories:"
-				print gt_fields, "\n"
 				gt_fields.each { |item|
 					if $categories.has_key?(item)
 						puts $categories[item]
-					elsif item.to_s === "GLE"
-						abort("GLE-containing VCF files not yet supported as of current version.")
+						puts "** GLE containing vcf files not supported as of version #{VCF2ALNVER} **\n" if item.to_s == "GLE"
 					else
 						puts "Genotype code #{item} not specified in VCF manual version 4.2"
 					end
 				}
-				exit!
+				exit
 			end
 		end
 	end
 end
-
-
 #-----------------------------------------------------------------------------------------------
-def to_alignment()
+def vcf_to_alignment
 	index = -1 # Set internal start index
 	previous_index = -1 # Index of previous ending base
 	previous_endex = 0 # End index of indels
@@ -458,13 +417,11 @@ def to_alignment()
 				$samples = line[0..-2].split("\t")[9..-1] # Get sample names
 			elsif line[0].chr != "#"
 				line_arr = line.split("\t")
-				if !$options.qual_filter.nil?
-					line_arr = quality_filter(line_arr)
-				end
+				line_arr = quality_filter(line_arr) # Quality filter has to be called to check for GLE
 				$options.concat ? name = "concat_aln" : name = line_arr[0]
 				if name != current_locus.name
 					current_locus.print_locus(line_num) unless current_locus.name == ""
-					puts "print_locus call from station A"
+					# puts "print_locus call from station A"
 					seqs = []
 					alts = []
 					$samples.size.times do
@@ -517,7 +474,7 @@ def to_alignment()
 						current_locus.alts[i] += "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
 					end
 					#Changed from previous_index to previous_endex; I'm going to use that variable. (J)
-					#(Also Jacob) DON'T DO THAT !!!!!!!!!!!!!!!!!
+					#(Also Jacob) DON'T DO THAT!!!!!!!!!!!!!!!!!
 					index += current_base - previous_index
 					endex = index + lengths.max - 1 # Sequence end index
 					
@@ -583,8 +540,8 @@ def to_alignment()
 					
 					if (current_base - 1 - prev_pos) >= $options.split_regions && previous_index != -1 && $options.split_regions != 0
 						current_locus.print_locus(line_num)
-						puts "print_locus call from station B"
-						puts "current base: #{current_base}", "prev_pos: #{prev_pos}", "Difference: #{current_base - 1 - prev_pos}", "previous_index: #{previous_index}"
+					#	puts "print_locus call from station B"
+					#	puts "current base: #{current_base}", "prev_pos: #{prev_pos}", "Difference: #{current_base - 1 - prev_pos}", "previous_index: #{previous_index}"
 
 						seqs = []
 						alts = []
@@ -611,24 +568,16 @@ def to_alignment()
 			end
 		end
 		current_locus.print_locus(line_num) # Print final alignment
-		puts "print_locus call from station C"
+	#	puts "print_locus call from station C"
 	end
 end
 #-----------------------------------------------------------------------------------------------
-if ARGV[0].nil?
-	abort("vcf2aln v0.2.0. \nInclude -h or --help for a full list of options.")
-end
+ARGV[0] ||= "-h"
 $options = Parser.parse(ARGV)
-
 while !FileTest.exist?($options.infile)
 	print "Input file not found. Please re-enter.\n"
 	$options.infile = gets.chomp
 end
-
-
-if !$options.type_fields.nil?
-	get_GT_fields($options.infile)
-end
-
-to_alignment()
+get_GT_fields($options.infile) if $options.type_fields
+vcf_to_alignment
 
