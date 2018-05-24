@@ -381,24 +381,27 @@ end
 
 #-----------------------------------------------------------------------------------------------
 def get_GT_fields(vcf_file)
+	@fields = []
 	File.open(vcf_file, 'r') do |vcf2aln|
 		while line = vcf2aln.gets
 			if line[0].chr != "#"
 				line_arr = line.split("\t")
 				gt_fields = line_arr[8].split(":")
-				puts "Genotype field information categories:"
-				gt_fields.each { |item|
-					if $categories.has_key?(item)
-						puts $categories[item]
-						puts "** GLE containing vcf files not supported as of version #{VCF2ALNVER} **\n" if item.to_s == "GLE"
-					else
-						puts "Genotype code #{item} not specified in VCF manual version 4.2"
-					end
-				}
-				exit
+				@fields.push(gt_fields).flatten!.uniq!
 			end
 		end
 	end
+	# Moved this section since fields are not constant across all sites
+	puts "Genotype field information categories:"
+	@fields.each { |item|
+		if $categories.has_key?(item)
+			puts $categories[item]
+			puts "** GLE containing vcf files not supported as of version #{VCF2ALNVER} **" if item.to_s == "GLE"
+		else
+			puts "** Genotype code #{item} not specified in VCF manual version 4.2 **"
+		end
+	}
+	exit
 end
 #-----------------------------------------------------------------------------------------------
 def vcf_to_alignment
