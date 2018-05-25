@@ -162,7 +162,7 @@ class Parser
 			opts.on("-x","--maxmissing [VALUE]", Float, "Maximum percent missing data to include sequence (Default = 100.0)") do |missing|
 				args.maxmissing = missing if missing != nil
 			end
-			opts.on("-O", -"onehap", "Print only one haplotype for diploid data") do
+			opts.on("-O", "--onehap", "Print only one haplotype for diploid data") do
 				args.onehap = true
 			end
 			opts.on("-a", "--alts", "Print alternate haplotypes in same file") do
