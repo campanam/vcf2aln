@@ -123,6 +123,7 @@ class Parser
 		args.mincalls = 0 # Minimum number of calls to include site
 		args.maxmissing = 100.0 # Maximum percent missing data to include sequence
 		args.alts = false # Print alternate haplotypes in same file
+		args.ambig = false # Print SNPs as ambiguity codes
 		args.qual_filter = 0 #Minimum quality for site (QUAL column)
 		args.site_depth = nil #Minimum site coverage depth
 		args.type_fields = false #Don't display VCF genotype fields on default
@@ -160,6 +161,9 @@ class Parser
 			end
 			opts.on("-a", "--alts", "Print alternate haplotypes in same file") do
 				args.alts = true
+			end
+			opts.on("-b", "--ambig", "Print SNP sites as ambiguity codes.") do
+				args.ambig = true
 			end
 			opts.on("-N", "--hap_flag", "Flag for haplotype data") do 
 				args.hap_flag = true
@@ -222,7 +226,6 @@ class Parser
 	end
 end
 #-----------------------------------------------------------------------------------------------
-
 def quality_filter(line_arr)
 	site_qual = line_arr[5]
 	filter = line_arr[6]
@@ -232,65 +235,41 @@ def quality_filter(line_arr)
 	samples.map!{ |element| element.split(":")}
 	genotypes = []
 	samples.each{|list| genotypes.push(list[0])}
-
+	# Leave if nothing to replace
 	return line_arr if genotypes.all? {|x| x == "./."}
 	found = false
-	
-	#if filter.to_s != "PASS" && filter.to_s != "."
-	#	filter_flag = true
-	#end
-	if site_qual.to_i < $options.qual_filter || (filter.to_s != 'PASS' && filter.to_s != ".")
-		
-		found = true
-		
-	end
-
-	unless $options.mq0f.nil? && $options.mqsb.nil? && $options.sample_mq.nil? && $options.site_depth.nil? || found == true #Don't execute this loop if you're not trying to filter for any site-specific quality scores
-	#This loop will determine if any of your site-specific quality scores don't satisfy the specified conditions. (INFO column)
+	found = true if site_qual.to_i < $options.qual_filter || (filter != 'PASS' && filter != ".")
+	unless ($options.mq0f.nil? && $options.mqsb.nil? && $options.sample_mq.nil? && $options.site_depth.nil?) || found #Don't execute this loop if you're not trying to filter for any site-specific quality scores
+		#This loop will determine if any of your site-specific quality scores don't satisfy the specified conditions. (INFO column)
 		info_arr.each do |item|
-			if found == true
+			if found
 				next
 			else
 				item_info = item.split("=")
-			  id = item_info[0]
-			  if id == "DP" && !$options.site_depth.nil?  #Scan for unacceptable site depth
-			    dp = item_info[1]
-			    if dp.to_i < $options.site_depth
-			      found = true
-			    end
-			  elsif id == "MQ0F" && !$options.mq0f.nil?  #Scan for unacceptable mq0f
-			    mqf = item_info[1]
-			    if mqf.to_f > $options.mq0f
-			      found = true
-			    end
-			  elsif id == "MQSB" && !$options.mqsb.nil? #Scan for unaccepable mqsb
-			    mqsb = item_info[1]
-			    if mqsb.to_f < $options.mqsb
-			      found = true
-			    end
-			  elsif id == "MQ" && !$options.site_mq.nil? #Scan for unacceptable overall map quality
-			    mq = item_info[1]
-			    if mq.to_i < $options.site_mq
-			      found = true
-			    end
-			  else
-			  	next
-			  end
+			  	id = item_info[0]
+			  	if id == "DP" && !$options.site_depth.nil?  #Scan for unacceptable site depth
+			    	dp = item_info[1]
+			    	found = true if dp.to_i < $options.site_depth
+			  	elsif id == "MQ0F" && !$options.mq0f.nil?  #Scan for unacceptable mq0f
+			   		mqf = item_info[1]
+			    	found = true if mqf.to_f > $options.mq0f
+			  	elsif id == "MQSB" && !$options.mqsb.nil? #Scan for unaccepable mqsb
+			    	mqsb = item_info[1]
+			    	found = true if mqsb.to_f < $options.mqsb
+			  	elsif id == "MQ" && !$options.site_mq.nil? #Scan for unacceptable overall map quality
+			    	mq = item_info[1]
+			    	found = true if mq.to_i < $options.site_mq
+			  	end
 			end
 		end
 	end
-
-	unless found == true || $options.sample_mq.nil? && $options.sample_depth.nil? && $options.min_ll.nil? && $options.phred_likelihood.nil? && $options.posterior.nil? && $options.conditional.nil? && $options.hap_qual.nil? && $options.adepth.nil?
+	unless found || ($options.sample_mq.nil? && $options.sample_depth.nil? && $options.min_ll.nil? && $options.phred_likelihood.nil? && $options.posterior.nil? && $options.conditional.nil? && $options.hap_qual.nil? && $options.adepth.nil?)
 		sample_info_fields = line_arr[8]
 		sample_info_fields = sample_info_fields.split(":")
 		index_hash = {}
-
 		#Create index hash; info fields may be ordered in any way, so we need a generalizable method to access each field at its proper position in the sample info
 		sample_info_fields.each{|v| index_hash[v] = sample_info_fields.index(v)}
-		
-
 		#This bit can be sped up by removing options from the index hash if the corresponding value in $options does not exist. 
-
 		for sample in samples do
 			break if found
 			for field in sample_info_fields do
@@ -303,7 +282,7 @@ def quality_filter(line_arr)
 					 	found = true
 					 	break
 				 	end
-			  when "GL"
+			 	when "GL"
 			  		if $options.min_ll
 					 	gl_array = sample[index_hash["GL"]].split(",")
 						for element in gl_array do
@@ -314,7 +293,10 @@ def quality_filter(line_arr)
 						end
 					end
 				when "GLE"
-					abort("** GLE containing vcf files not supported as of version #{VCF2ALNVER} **")
+					puts "** GLE not supported as of version #{VCF2ALNVER} **"
+					puts "** Treating line: #{line_arr.join("\t")} as missing data **"
+					found = true
+					break
 				when "PQ"
 					next
 				when "PL"
@@ -353,18 +335,17 @@ def quality_filter(line_arr)
 						break
 					end
 				when "AD"
-						if $options.adepth && sample[index_hash["AD"]].to_i < $options.adepth
-							found = true
-							break
-						end
+					if $options.adepth && sample[index_hash["AD"]].to_i < $options.adepth
+						found = true
+						break
+					end
 				end
 			end
 		end
 	end
-	
+	# Replace filtered genotypes
 	if found
 		genotypes.each { |genotype| genotype.replace("./.") if genotype != "./." }
-
 		new_samples = []
 		samples.each{|list|
 			list.delete_at(0)
@@ -378,7 +359,18 @@ def quality_filter(line_arr)
 		return line_arr
 	end
 end
-
+#-----------------------------------------------------------------------------------------------
+def build_ambig_hash
+	$ambig_hash = {['A','G'] => 'R', ['C','T'] => 'Y', ['A','C'] => 'M', ['G','T'] => 'K', ['C','G'] => 'S', ['A','T'] => 'W'}
+end
+#-----------------------------------------------------------------------------------------------
+def get_ambiguity_code(var1, var2)
+	if var1 == var2
+		return var1
+	else
+		return $ambig_hash[[var1,var2].sort]
+	end
+end
 #-----------------------------------------------------------------------------------------------
 def get_GT_fields(vcf_file)
 	@fields = []
@@ -502,37 +494,50 @@ def vcf_to_alignment
 						for i in 9...line_arr.size
 							vars = line_arr[i].split(":")[0] # This code handles phasing and randomizes unphased diplotypes
 							randvar = rand(2)
-							if vars[0].chr != "." # Code below uses string replacement due to multiallelic sites having same start index
-								if vars[1].chr == "|" or randvar == 0
-									current_locus.seqs[i-9][index..endex] = variants[vars[0].to_i]
+							if !$options.ambig or endex - index > 0 # Phase haplotypes even in ambiguity situations
+								if vars[0].chr != "." # Code below uses string replacement due to multiallelic sites having same start index
+									if vars[1].chr == "|" or randvar == 0
+										current_locus.seqs[i-9][index..endex] = variants[vars[0].to_i]
+									else
+										current_locus.alts[i-9][index..endex] = variants[vars[0].to_i]
+									end
 								else
-									current_locus.alts[i-9][index..endex] = variants[vars[0].to_i]
+									if vars[1].chr == "|" or randvar == 0
+										current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
+									else
+										current_locus.alts[i-9][index..endex] = "?" * (endex - index + 1)
+									end
 								end
-							else
-								if vars[1].chr == "|" or randvar == 0
-									current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
+								if vars[2].chr != "."
+									if vars[1].chr == "|" or randvar == 0
+										current_locus.alts[i-9][index..endex] = variants[vars[2].to_i]
+									else
+										current_locus.seqs[i-9][index..endex] = variants[vars[2].to_i]
+									end
 								else
-									current_locus.alts[i-9][index..endex] = "?" * (endex - index + 1)
+									if vars[1].chr == "|" or randvar == 1
+										current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
+									else
+										current_locus.alts[i-9][index..endex] = "?" * (endex - index + 1)
+									end
 								end
-							end
-							if vars[2].chr != "."
-								if vars[1].chr == "|" or randvar == 0
-									current_locus.alts[i-9][index..endex] = variants[vars[2].to_i]
+							elsif $options.ambig
+								if vars[0] == "." and vars[2] == "."
+									code = "?"
+								elsif vars[0] == "."
+									code = variants[vars[2].to_i]
+								elsif vars[1] == "."
+									code = variants[vars[0].to_i]
 								else
-									current_locus.seqs[i-9][index..endex] = variants[vars[2].to_i]
+									code = get_ambiguity_code(variants[vars[0].to_i].upcase, variants[vars[2].to_i].upcase)
 								end
-							else
-								if vars[1].chr == "|" or randvar == 1
-									current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
-								else
-									current_locus.alts[i-9][index..endex] = "?" * (endex - index + 1)
-								end
+								current_locus.seqs[i-9][index..endex] = code
+								current_locus.alts[i-9][index..endex] = code
 							end
 						end
 					else
 						for i in 9...line_arr.size
 							vars = line_arr[i]
-
 							if vars == "."
 								current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
 							else 
@@ -581,6 +586,7 @@ while !FileTest.exist?($options.infile)
 	print "Input file not found. Please re-enter.\n"
 	$options.infile = gets.chomp
 end
+build_ambig_hash if $options.ambig
 get_GT_fields($options.infile) if $options.type_fields
 vcf_to_alignment
 
