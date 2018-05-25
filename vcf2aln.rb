@@ -26,8 +26,10 @@ class Locus
 				File.open(sample + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'w') do |write|
 					write.puts ">" + sample + "_hap1"
 				end
-				File.open(sample + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'w') do |write|
-					write.puts ">" + sample + "_hap2"
+				unless $options.onehap
+					File.open(sample + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'w') do |write|
+						write.puts ">" + sample + "_hap2"
+					end
 				end
 				@missinghap1.push(0)
 				@missinghap2.push(0)
@@ -40,7 +42,7 @@ class Locus
 			File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
 				write << @seqs[i]
 			end
-			unless $options.hap_flag
+			unless $options.onehap
 				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
 					write << @alts[i]
 				end
@@ -63,7 +65,7 @@ class Locus
 				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
 					write.puts @seqs[i]
 				end
-				unless $options.hap_flag
+				unless $options.onehap
 					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
 						write.puts @alts[i]
 					end
@@ -72,14 +74,14 @@ class Locus
 					@missinghap1[i] += @seqs[i].scan("?").length
 					@missinghap2[i] += @seqs[i].scan("?").length unless $options.hap_flag
 					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing unless $options.hap_flag
+					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing unless $options.onehap
 				end
 			end
 			if $options.alts
 				system("cat *#{$options.outprefix + @name}*.tmp.fa > #{$options.outprefix + @name + '.fa'}")
 			else
 				system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '.hap1.fa'}")
-				system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '.hap2.fa'}") unless $options.hap_flag
+				system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '.hap2.fa'}") unless $options.onehap
 			end
 			system("rm *#{$options.outprefix + @name}*.tmp.fa")
 		else
@@ -87,7 +89,7 @@ class Locus
 				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
 					write.puts @seqs[i]
 				end
-				unless $options.hap_flag
+				unless $options.onehap
 					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
 						write.puts @alts[i]
 					end
@@ -96,14 +98,14 @@ class Locus
 					@missinghap1[i] += @seqs[i].scan("?").length
 					@missinghap2[i] += @seqs[i].scan("?").length unless $options.hap_flag
 					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing unless $options.hap_flag
+					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing unless $options.onehap
 				end
 			end
 			if $options.alts
 				system("cat *#{$options.outprefix + @name}*.tmp.fa > #{$options.outprefix + @name + '.fa'}")
 			else
 				system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.hap1.fa'}")
-				system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.hap2.fa'}") unless $options.hap_flag
+				system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.hap2.fa'}") unless $options.onehap
 			end
 			system("rm *#{$options.outprefix + @name}*.tmp.fa")
 			$num_regions += 1
@@ -122,6 +124,7 @@ class Parser
 		args.skip = false # Skip missing sites in vcf
 		args.mincalls = 0 # Minimum number of calls to include site
 		args.maxmissing = 100.0 # Maximum percent missing data to include sequence
+		args.onehap = false # Print only one haplotype
 		args.alts = false # Print alternate haplotypes in same file
 		args.ambig = false # Print SNPs as ambiguity codes
 		args.qual_filter = 0 #Minimum quality for site (QUAL column)
@@ -159,6 +162,9 @@ class Parser
 			opts.on("-x","--maxmissing [VALUE]", Float, "Maximum percent missing data to include sequence (Default = 100.0)") do |missing|
 				args.maxmissing = missing if missing != nil
 			end
+			opts.on("-O", -"onehap", "Print only one haplotype for diploid data") do
+				args.onehap = true
+			end
 			opts.on("-a", "--alts", "Print alternate haplotypes in same file") do
 				args.alts = true
 			end
@@ -167,6 +173,7 @@ class Parser
 			end
 			opts.on("-N", "--hap_flag", "Flag for haplotype data") do 
 				args.hap_flag = true
+				args.onehap = true # Condense file writing
 			end
 			opts.on("-g", "--split_regions [VALUE]", Integer, "Split alignment into subregional alignments for phylogenetic analysis") do |regions|
 				args.split_regions = regions if regions != nil
