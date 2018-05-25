@@ -144,6 +144,8 @@ class Parser
 		args.split_regions = 0 #Don't activate region-split subroutine by default
 		opt_parser = OptionParser.new do |opts|
 			opts.banner = "Command-line usage: ruby vcf2aln.rb [options]"
+			opts.separator ""
+			opts.separator "I/O options:"
 			opts.on("-i","--input [FILE]", String, "Input VCF file") do |vcf|
 				args.infile = vcf
 			end
@@ -155,12 +157,6 @@ class Parser
 			end
 			opts.on("-s", "--skip", "Skip missing sites in vcf") do
 				args.skip = true
-			end
-			opts.on("-m","--mincalls [VALUE]", Integer, "Minimum number of calls to include site (Default = 0)") do |msnps|
-				args.mincalls = msnps if msnps != nil
-			end
-			opts.on("-x","--maxmissing [VALUE]", Float, "Maximum percent missing data to include sequence (Default = 100.0)") do |missing|
-				args.maxmissing = missing if missing != nil
 			end
 			opts.on("-O", "--onehap", "Print only one haplotype for diploid data") do
 				args.onehap = true
@@ -178,8 +174,13 @@ class Parser
 			opts.on("-g", "--split_regions [VALUE]", Integer, "Split alignment into subregional alignments for phylogenetic analysis") do |regions|
 				args.split_regions = regions if regions != nil
 			end
-			opts.on("-t", "--typefields", "Display VCF genotype field information, then quit the program.") do
-				args.type_fields = true
+			opts.separator ""
+			opts.separator "Filtration options:"
+			opts.on("-m","--mincalls [VALUE]", Integer, "Minimum number of calls to include site (Default = 0)") do |msnps|
+				args.mincalls = msnps if msnps != nil
+			end
+			opts.on("-x","--maxmissing [VALUE]", Float, "Maximum percent missing data to include sequence (Default = 100.0)") do |missing|
+				args.maxmissing = missing if missing != nil
 			end
 			opts.on("-q", "--qual_filter [VALUE]", Integer, "Minimum accepted value for QUAL (per site) (Default = 0)") do |qual|
 				args.qual_filter = qual if qual != nil
@@ -219,6 +220,11 @@ class Parser
 			end
 			opts.on("-A", "--adepth [VALUE]", Integer, "Minimum allowed allele depth. (Default = No filter)") do |ad|
 				args.adepth = ad if ad != nil
+			end
+			opts.separator ""
+			opts.separator "General information:"
+			opts.on("-t", "--typefields", "Display VCF genotype field information, then quit the program.") do
+				args.type_fields = true
 			end
 			opts.on("-v", "--version", "Print program version.") do
 				abort("vcf2aln v." + VCF2ALNVER + "\n")
