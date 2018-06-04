@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.3.0"
+VCF2ALNVER = "0.4.0"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2018
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -23,10 +23,14 @@ class Locus
 		@missinghap2 = []
 		unless @name == ""
 			for sample in $samples
-				File.open(sample + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'w') do |write|
-					write.puts ">" + sample + "_hap1"
-				end
-				unless $options.onehap
+				if $options.onehap
+					File.open(sample + "_#{$options.outprefix}#{@name}.tmp.fa", 'w') do |write|
+						write.puts ">" + sample
+					end
+				else
+					File.open(sample + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'w') do |write|
+						write.puts ">" + sample + "_hap1"
+					end
 					File.open(sample + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'w') do |write|
 						write.puts ">" + sample + "_hap2"
 					end
@@ -39,10 +43,14 @@ class Locus
 	def write_seqs
 		@length += @seqs[0].length
 		for i in 0...$samples.size
-			File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
-				write << @seqs[i]
-			end
-			unless $options.onehap
+			if $options.onehap
+				File.open($samples[i] + "_#{$options.outprefix}#{@name}.tmp.fa", 'a') do |write|
+					write << @seqs[i]
+				end
+			else
+				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
+					write << @seqs[i]
+				end
 				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
 					write << @alts[i]
 				end
@@ -62,10 +70,14 @@ class Locus
 		@length += @seqs[0].length
 		if $options.split_regions == 0
 			for i in 0...$samples.size
-				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
-					write.puts @seqs[i]
-				end
-				unless $options.onehap
+				if $options.onehap
+					File.open($samples[i] + "_#{$options.outprefix}#{@name}.tmp.fa", 'a') do |write|
+						write.puts @seqs[i]
+					end
+				else
+					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
+						write.puts @seqs[i]
+					end
 					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
 						write.puts @alts[i]
 					end
@@ -73,23 +85,35 @@ class Locus
 				if $options.maxmissing < 100.0
 					@missinghap1[i] += @seqs[i].scan("?").length
 					@missinghap2[i] += @seqs[i].scan("?").length unless $options.hap_flag
-					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing unless $options.onehap
+					if $options.onehap
+						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+					else
+						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+					end
 				end
 			end
 			if $options.alts
 				system("cat *#{$options.outprefix + @name}*.tmp.fa > #{$options.outprefix + @name + '.fa'}")
 			else
-				system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '.hap1.fa'}")
-				system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '.hap2.fa'}") unless $options.onehap
+				if $options.onehap
+					system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '.fa'}")
+				else
+					system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '.hap1.fa'}")
+					system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '.hap2.fa'}")
+				end
 			end
 			system("rm *#{$options.outprefix + @name}*.tmp.fa")
 		else
 			for i in 0...$samples.size
-				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
-					write.puts @seqs[i]
-				end
-				unless $options.onehap
+				if $options.onehap
+					File.open($samples[i] + "_#{$options.outprefix}#{@name}.tmp.fa", 'a') do |write|
+						write.puts @seqs[i]
+					end
+				else
+					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
+						write.puts @seqs[i]
+					end
 					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
 						write.puts @alts[i]
 					end
@@ -97,15 +121,23 @@ class Locus
 				if $options.maxmissing < 100.0
 					@missinghap1[i] += @seqs[i].scan("?").length
 					@missinghap2[i] += @seqs[i].scan("?").length unless $options.hap_flag
-					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing unless $options.onehap
+					if $options.onehap
+						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+					else
+						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+					end
 				end
 			end
 			if $options.alts
 				system("cat *#{$options.outprefix + @name}*.tmp.fa > #{$options.outprefix + @name + '.fa'}")
 			else
-				system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.hap1.fa'}")
-				system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.hap2.fa'}") unless $options.onehap
+				if $options.onehap
+					system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.fa'}")
+				else
+					system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.hap1.fa'}")
+					system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.hap2.fa'}")
+				end
 			end
 			system("rm *#{$options.outprefix + @name}*.tmp.fa")
 			$num_regions += 1
