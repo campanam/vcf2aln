@@ -133,7 +133,7 @@ class Locus
 				system("cat *#{$options.outprefix + @name}*.tmp.fa > #{$options.outprefix + @name + '.fa'}")
 			else
 				if $options.onehap
-					system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.fa'}")
+					system("cat *#{$options.outprefix + @name}.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.fa'}")
 				else
 					system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.hap1.fa'}")
 					system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.hap2.fa'}")
