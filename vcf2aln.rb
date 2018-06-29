@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.4.1"
+VCF2ALNVER = "0.4.2"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2018
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -535,7 +535,7 @@ def vcf_to_alignment
 						
 					#end
 
-					unless $options.hap_flag #Don't run this subroutine on haploid vcf
+					unless $options.hap_flag #Accounting for ploidy
 						for i in 9...line_arr.size
 							vars = line_arr[i].split(":")[0] # This code handles phasing and randomizes unphased diplotypes
 							randvar = rand(2)
@@ -582,7 +582,7 @@ def vcf_to_alignment
 						end
 					else
 						for i in 9...line_arr.size
-							vars = line_arr[i]
+							vars = line_arr[i].split(":")[0]
 							if vars == "."
 								current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
 							else 
