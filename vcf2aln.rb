@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.4.2"
+VCF2ALNVER = "0.5"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2018
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -174,6 +174,7 @@ class Parser
 		args.mqsb = nil # ^^
 		args.adepth = nil #Don't filter allele depth by default
 		args.split_regions = 0 #Don't activate region-split subroutine by default
+		args.write_cycle = 1000000 # Number of cycles before force of write-out
 		opt_parser = OptionParser.new do |opts|
 			opts.banner = "Command-line usage: ruby vcf2aln.rb [options]"
 			opts.separator ""
@@ -257,6 +258,9 @@ class Parser
 			opts.separator "General information:"
 			opts.on("-t", "--typefields", "Display VCF genotype field information, then quit the program.") do
 				args.type_fields = true
+			end
+			opts.on("-W", "--writecycles", Integer, "Number of variants to store in memory before writing to disk. (Default = 1000000)") do |wrt|
+				args.write_cycle = wrt if wrt != nil
 			end
 			opts.on("-v", "--version", "Print program version.") do
 				abort("vcf2aln v." + VCF2ALNVER + "\n")
@@ -450,12 +454,14 @@ def vcf_to_alignment
 	$num_regions = 0
 	prev_pos = 0
 	line_num = 0
+	write_cycle = 0
 	File.open($options.infile, 'r') do |vcf2aln|
 		while line = vcf2aln.gets
 			line_num += 1
 			if line[0..1] == "#C"
 				$samples = line[0..-2].split("\t")[9..-1] # Get sample names
 			elsif line[0].chr != "#"
+				write_cycle += 1
 				line_arr = line.split("\t")
 				line_arr = quality_filter(line_arr) # Quality filter has to be called to check for GLE
 				$options.concat ? name = "concat_aln" : name = line_arr[0]
@@ -504,8 +510,11 @@ def vcf_to_alignment
 								current_locus.alts[i] += "?" * (current_base - 1 - previous_endex)
 							end
 						end
-						current_locus.write_seqs #Write sequence to end
-						index = -1
+						if write_cycle >= $options.write_cycle
+							current_locus.write_seqs #Write sequence to end
+							write_cycle = 0
+						end
+						#index = -1
 						previous_index = current_base - 1
 						previous_endex = current_base - 1
 					end
@@ -515,7 +524,7 @@ def vcf_to_alignment
 					end
 					#Changed from previous_index to previous_endex; I'm going to use that variable. (J)
 					#(Also Jacob) DON'T DO THAT!!!!!!!!!!!!!!!!!
-					index += current_base - previous_index
+					#index += current_base - previous_index
 					endex = index + lengths.max - 1 # Sequence end index
 					
 					
