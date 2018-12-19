@@ -481,6 +481,8 @@ def vcf_to_alignment
 				end
 				if line_arr[0] != previous_name # Reset indexes for concatenated alignments
 					current_locus.write_seqs
+					index = -1
+					write_cycle = 1
 					previous_index = -1
 					previous_endex = 0
 					previous_name = line_arr[0]
@@ -506,27 +508,26 @@ def vcf_to_alignment
 					if current_base > previous_endex
 						for i in 0...$samples.size
 							unless $options.skip # Adjust for missing bases
-								current_locus.seqs[i] += "?" * (current_base - 1 - previous_endex)
-								current_locus.alts[i] += "?" * (current_base - 1 - previous_endex)
+								current_locus.seqs[i] << "?" * (current_base - 1 - previous_endex)
+								current_locus.alts[i] << "?" * (current_base - 1 - previous_endex)
 							end
 						end
 						if write_cycle >= $options.write_cycle
 							current_locus.write_seqs #Write sequence to end
+							index = -1
 							write_cycle = 0
 						end
-						#index = -1
 						previous_index = current_base - 1
 						previous_endex = current_base - 1
 					end
 					for i in 0...$samples.size # Adjust locus lengths
-						current_locus.seqs[i] += "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
-						current_locus.alts[i] += "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
+						current_locus.seqs[i] << "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
+						current_locus.alts[i] << "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
 					end
 					#Changed from previous_index to previous_endex; I'm going to use that variable. (J)
 					#(Also Jacob) DON'T DO THAT!!!!!!!!!!!!!!!!!
-					#index += current_base - previous_index
+					index += current_base - previous_index
 					endex = index + lengths.max - 1 # Sequence end index
-					
 					
 
 					#if current_base.to_i >= 0
