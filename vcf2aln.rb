@@ -514,9 +514,9 @@ def vcf_to_alignment
 						end
 						if write_cycle >= $options.write_cycle
 							current_locus.write_seqs #Write sequence to end
-							index = -1
 							write_cycle = 0
 						end
+						index =  current_locus.seqs[0].size - 1
 						previous_index = current_base - 1
 						previous_endex = current_base - 1
 					end
