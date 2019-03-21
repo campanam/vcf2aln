@@ -286,6 +286,13 @@ def quality_filter(line_arr, gt_index, pgt_index)
 		puts "** Missing genotype (GT or PGT) tags **"
 		puts "** Treating line: #{line_arr.join("\t")} as missing data **"
 		samples.each{|list| genotypes.push("./.")}
+		new_samples = []
+		samples.each{|list|
+			list.insert(0, "./.")
+			new_list = list.join(":")
+			new_samples.push(new_list)
+		}
+		line_arr[9..-1] = new_samples		
 	else
 		samples.each{|list| genotypes.push(list[gt_index])}
 		samples.each{|list| pgenotypes.push(list[pgt_index])} unless pgt_index.nil?
@@ -400,12 +407,10 @@ def quality_filter(line_arr, gt_index, pgt_index)
 	end
 	# Replace filtered genotypes
 	if found
-		genotypes.each { |genotype| genotype.replace("./.") if genotype != "./." }
-		pgenotypes.each { |pgenotype| pgenotype.replace("./.") if pgenotype != "./." } unless pgt_index.nil?
 		new_samples = []
 		samples.each{|list|
-			list.delete_at(gt_index)
-			list.unshift("./.")
+			list[gt_index] = "./."
+			list[pgt_index] = "./." unless pgt_index.nil?
 			new_list = list.join(":")
 			new_samples.push(new_list)
 		}
