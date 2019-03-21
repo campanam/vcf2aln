@@ -281,7 +281,6 @@ def quality_filter(line_arr, gt_index, pgt_index)
 	info_arr = site_info_fields.split(";")
 	samples.map!{ |element| element.split(":")}
 	genotypes = []
-	pgenotypes = []
 	if (gt_index.nil? && pgt_index.nil?)
 		puts "** Missing genotype (GT or PGT) tags **"
 		puts "** Treating line: #{line_arr.join("\t")} as missing data **"
@@ -295,7 +294,6 @@ def quality_filter(line_arr, gt_index, pgt_index)
 		line_arr[9..-1] = new_samples		
 	else
 		samples.each{|list| genotypes.push(list[gt_index])}
-		samples.each{|list| pgenotypes.push(list[pgt_index])} unless pgt_index.nil?
 	end
 	# Leave if nothing to replace
 	return line_arr if genotypes.all? {|x| x == "./."}
