@@ -216,10 +216,10 @@ class Parser
 			opts.on("-q", "--qual_filter [VALUE]", Integer, "Minimum accepted value for QUAL (per site) (Default = 0.0)") do |qual|
 				args.qual_filter = qual.to_f if qual != nil
 			end
-			opts.on("-y", "--site_depth [VALUE]", Integer, "Minimum desired depth for each site (DP, in INFO) (Default = No filter)") do |site|
+			opts.on("-y", "--site_depth [VALUE]", Integer, "Minimum desired total depth for each site (Default = No filter)") do |site|
 				args.site_depth = site.to_i if site != nil
 			end
-			opts.on("-d", "--sampledepth [VALUE]", Integer, "Minimum allowed read depth (Default = No filter)") do |depth|
+			opts.on("-d", "--sampledepth [VALUE]", Integer, "Minimum allowed sample depth for each site (Default = No filter)") do |depth|
 				args.sample_depth = depth.to_i if depth != nil
 			end
 			opts.on("-l", "--likelihood [VALUE]", Float, "Minimum allowed genotype log-likelihood (At least one option must satisfy this value)") do |likelihood|
@@ -244,7 +244,7 @@ class Parser
 				args.site_mq.to_i = mq if mq != nil
 			end
 			opts.on("-F", "--mq0f [VALUE]", Float, "Maximum allowed value for MQ0F. Must be between 0 and 1. (Default = No filter)") do |mqf|
-				args.mq0f.to_i = mqf if mqf != nil
+				args.mq0f.to_f = mqf if mqf != nil
 			end
 			opts.on("-S", "--mqsb [VALUE]", Float, "Minimum allowed value for MQSB. (Default = No filter)") do |sb|
 				args.mqsb.to_f = sb if sb != nil
@@ -325,26 +325,22 @@ def quality_filter(line_arr, gt_index, pgt_index)
 	end
 	unless found || ($options.sample_mq.nil? && $options.sample_depth.nil? && $options.min_ll.nil? && $options.phred_likelihood.nil? && $options.posterior.nil? && $options.conditional.nil? && $options.hap_qual.nil? && $options.adepth.nil?)
 		sample_info_fields = line_arr[8].split(":")
-		puts sample_info_fields
 		index_hash = {}
 		#Create index hash; info fields may be ordered in any way, so we need a generalizable method to access each field at its proper position in the sample info
 		sample_info_fields.each{|v| index_hash[v] = sample_info_fields.index(v)}
-		print index_hash
 		#This bit can be sped up by removing options from the index hash if the corresponding value in $options does not exist. 
 		for sample in samples do
 			break if found
 			for field in sample_info_fields do
 				break if found
+				
 				case field
 				when "GT", "PGT"
 					next
 				when "DP"
 					if $options.sample_depth && sample[index_hash["DP"]].to_i < $options.sample_depth
 					 	found = true
-					 	puts sample[index_hash["DP"]].to_i
-					 	exit
-					 	break
-					 	
+					 	break 	
 				 	end
 			 	when "GL"
 			  		if $options.min_ll
