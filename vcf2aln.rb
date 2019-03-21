@@ -2,15 +2,13 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.5"
-# Michael G. Campana, Jacob A. West-Roberts, 2017-2018
+VCF2ALNVER = "0.6"
+# Michael G. Campana, Jacob A. West-Roberts, 2017-2019
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
 
 require 'optparse'
 require 'ostruct'
-
-$categories = {"GT" => "GT: Genotype information", "DP" => "DP: Sample read depth", "FT" => "FT: Sample genotype filter indicating if this genotype call passed quality filters", "GL" => "GL: Genotype log likelihoods (base 10) showing likelihood of each possible phased genotype", "GLE" => "GLE: Genotype likelihoods for uncertain copy number/phasing (includes all possible arrangements)", "PL" => "PL: Phred-scaled genotype likelihoods rounded to the nearest integer", "GP" => "GP: Phred-scaled genotype posterior probabilities", "AD" => "AD: Allele Depth", "GQ" => "GQ: Conditional genotype quality (phred-encoded): probability of the wrong genotype call conditioned on this site being variant", "HQ" => "HQ: Haplotype qualities", "PS" => "PS: Phase set: the set of phased genotypes to which this genome belongs", "PQ" => "PQ: Phase Quality. Phred-scaled probability that alleles are ordered incorrectly in a heterozygote (Not commonly used)", "EC" => "Comma separated list of expected alternate allele counts", "MQ" => "MQ: RMS mapping quality (Integer)"}
 
 class Locus
 	attr_accessor :name, :seqs, :alts, :length
@@ -275,7 +273,7 @@ class Parser
 	end
 end
 #-----------------------------------------------------------------------------------------------
-def quality_filter(line_arr)
+def quality_filter(line_arr, gt_index, pgt_index)
 	site_qual = line_arr[5]
 	filter = line_arr[6]
 	site_info_fields = line_arr[7]
@@ -283,7 +281,15 @@ def quality_filter(line_arr)
 	info_arr = site_info_fields.split(";")
 	samples.map!{ |element| element.split(":")}
 	genotypes = []
-	samples.each{|list| genotypes.push(list[0])}
+	pgenotypes = []
+	if (gt_index.nil? && pgt_index.nil?)
+		puts "** Missing genotype (GT or PGT) tags **"
+		puts "** Treating line: #{line_arr.join("\t")} as missing data **"
+		samples.each{|list| genotypes.push("./.")}
+	else
+		samples.each{|list| genotypes.push(list[gt_index])}
+		samples.each{|list| pgenotypes.push(list[pgt_index])} unless pgt_index.nil?
+	end
 	# Leave if nothing to replace
 	return line_arr if genotypes.all? {|x| x == "./."}
 	found = false
@@ -324,7 +330,7 @@ def quality_filter(line_arr)
 			for field in sample_info_fields do
 				break if found
 				case field
-				when "GT"
+				when "GT", "PGT"
 					next
 				when "DP"
 					if $options.sample_depth && sample[index_hash["DP"]].to_i < $options.sample_depth
@@ -395,9 +401,10 @@ def quality_filter(line_arr)
 	# Replace filtered genotypes
 	if found
 		genotypes.each { |genotype| genotype.replace("./.") if genotype != "./." }
+		pgenotypes.each { |pgenotype| pgenotype.replace("./.") if pgenotype != "./." } unless pgt_index.nil?
 		new_samples = []
 		samples.each{|list|
-			list.delete_at(0)
+			list.delete_at(gt_index)
 			list.unshift("./.")
 			new_list = list.join(":")
 			new_samples.push(new_list)
@@ -422,27 +429,25 @@ def get_ambiguity_code(var1, var2)
 end
 #-----------------------------------------------------------------------------------------------
 def get_GT_fields(vcf_file)
-	@fields = []
+	@fields = {}
 	File.open(vcf_file, 'r') do |vcf2aln|
 		while line = vcf2aln.gets
-			if line[0].chr != "#"
-				line_arr = line.split("\t")
-				gt_fields = line_arr[8].split(":")
-				@fields.push(gt_fields).flatten!.uniq!
+			if line[0..12] == "##FORMAT=<ID="
+				fields_arr = line.split("Description")
+				field = fields_arr[0].split(",Number")[0][13..-1]
+				puts field
+				description = fields_arr[1][2...-3]
+				puts description
+				@fields[field] = description
 			end
 		end
 	end
-	# Moved this section since fields are not constant across all sites
 	puts "Genotype field information categories:"
-	@fields.each { |item|
-		if $categories.has_key?(item)
-			puts $categories[item]
-			puts "** GLE containing vcf files not supported as of version #{VCF2ALNVER} **" if item.to_s == "GLE"
-		else
-			puts "** Genotype code #{item} not specified in VCF manual version 4.2 **"
-		end
-	}
-	exit
+	for field in @fields.keys
+		puts field + ": " + @fields[field]
+		puts "** GLE containing vcf files not supported as of version #{VCF2ALNVER} **" if field == "GLE"
+	end
+	exit	
 end
 #-----------------------------------------------------------------------------------------------
 def vcf_to_alignment
@@ -463,7 +468,20 @@ def vcf_to_alignment
 			elsif line[0].chr != "#"
 				write_cycle += 1
 				line_arr = line.split("\t")
-				line_arr = quality_filter(line_arr) # Quality filter has to be called to check for GLE
+				codes = line_arr[8].split(":") #GET PHASING LOCATION
+				pgt_index = nil
+				gt_index = nil
+				if codes.include?("PGT")
+					vars_index = codes.index("PGT")
+					pgt_index = vars_index
+					gt_index = codes.index("GT")
+				elsif codes.include?("GT")
+					vars_index = codes.index("GT")
+					gt_index = vars_index
+				else
+					vars_index = 0
+				end
+				line_arr = quality_filter(line_arr, gt_index, pgt_index) # Quality filter has to be called to check for GLE
 				$options.concat ? name = "concat_aln" : name = line_arr[0]
 				if name != current_locus.name
 					current_locus.print_locus(line_num) unless current_locus.name == ""
@@ -547,7 +565,8 @@ def vcf_to_alignment
 
 					unless $options.hap_flag #Accounting for ploidy
 						for i in 9...line_arr.size
-							vars = line_arr[i].split(":")[0] # This code handles phasing and randomizes unphased diplotypes
+							vars = line_arr[i].split(":")[vars_index] # This code handles phasing and randomizes unphased diplotypes
+							vars = line_arr[i].split(":")[gt_index] if (codes.include?("PGT") && vars[0].chr == ".") # Correction for homozygous reference phasing
 							randvar = rand(2)
 							if !$options.ambig or endex - index > 0 # Phase haplotypes even in ambiguity situations
 								if vars[0].chr != "." # Code below uses string replacement due to multiallelic sites having same start index
@@ -592,7 +611,7 @@ def vcf_to_alignment
 						end
 					else
 						for i in 9...line_arr.size
-							vars = line_arr[i].split(":")[0]
+							vars = line_arr[i].split(":")[vars_index]
 							if vars == "."
 								current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
 							else 
