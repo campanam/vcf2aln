@@ -208,46 +208,46 @@ class Parser
 			opts.separator ""
 			opts.separator "Filtration options:"
 			opts.on("-m","--mincalls [VALUE]", Integer, "Minimum number of calls to include site (Default = 0)") do |msnps|
-				args.mincalls = msnps.to_i if msnps != nil
+				args.mincalls = msnps if msnps != nil
 			end
 			opts.on("-x","--maxmissing [VALUE]", Float, "Maximum percent missing data to include sequence (Default = 100.0)") do |missing|
-				args.maxmissing = missing.to_f if missing != nil
+				args.maxmissing = missing if missing != nil
 			end
 			opts.on("-q", "--qual_filter [VALUE]", Integer, "Minimum accepted value for QUAL (per site) (Default = 0.0)") do |qual|
-				args.qual_filter = qual.to_f if qual != nil
+				args.qual_filter = qual if qual != nil
 			end
 			opts.on("-y", "--site_depth [VALUE]", Integer, "Minimum desired total depth for each site (Default = No filter)") do |site|
-				args.site_depth = site.to_i if site != nil
+				args.site_depth = site if site != nil
 			end
 			opts.on("-d", "--sampledepth [VALUE]", Integer, "Minimum allowed sample depth for each site (Default = No filter)") do |depth|
-				args.sample_depth = depth.to_i if depth != nil
+				args.sample_depth = depth if depth != nil
 			end
 			opts.on("-l", "--likelihood [VALUE]", Float, "Minimum allowed genotype log-likelihood (At least one option must satisfy this value)") do |likelihood|
-				args.min_ll = likelihood.to_f if likelihood != nil
+				args.min_ll = likelihood if likelihood != nil
 			end
 			opts.on("-p", "--phred [VALUE]", Integer, "Minimum accepted phred-scaled genotype likelihood (Default = No filter)") do |phreddy|
-				args.phred_likelihood = phreddy.to_i if phreddy != nil
+				args.phred_likelihood = phreddy if phreddy != nil
 			end
 			opts.on("-P", "--posterior [VALUE]", Float, "Minimum accepted phred-scaled genotype posterior probability (Default = No filter)") do |post|
-				args.posterior.to_f = post if post != nil
+				args.posterior = post if post != nil
 			end
 			opts.on("-C", "--conditional [VALUE]", Float, "Minimum conditional genotype quality (phred-encoded) (Default = No filter)") do |condi|
-				args.conditional.to_f = condi if condi != nil
+				args.conditional = condi if condi != nil
 			end
 			opts.on("-H", "--haplotype_quality [VALUE]", Integer, "Minimum allowed haplotype quality (phred-encoded) (Default = No filter)") do |haplo|
-				args.hap_qual.to_i = haplo if haplo != nil
+				args.hap_qual = haplo if haplo != nil
 			end
 			opts.on("-r", "--sample_mq [VALUE]", Integer, "Minimum allowed per-sample RMS mapping quality (Default = No filter)") do |map_quality|
-				args.sample_mq.to_i = map_quality if map_quality != nil
+				args.sample_mq = map_quality if map_quality != nil
 			end
 			opts.on("-R", "--site_mq [VALUE]", Integer, "Minimum allowed per-site mapping quality (MQ in INFO) (Default = No filter)") do |mq|
-				args.site_mq.to_i = mq if mq != nil
+				args.site_mq = mq if mq != nil
 			end
 			opts.on("-F", "--mq0f [VALUE]", Float, "Maximum allowed value for MQ0F. Must be between 0 and 1. (Default = No filter)") do |mqf|
-				args.mq0f.to_f = mqf if mqf != nil
+				args.mq0f = mqf if mqf != nil
 			end
 			opts.on("-S", "--mqsb [VALUE]", Float, "Minimum allowed value for MQSB. (Default = No filter)") do |sb|
-				args.mqsb.to_f = sb if sb != nil
+				args.mqsb = sb if sb != nil
 			end
 			opts.on("-A", "--adepth [VALUE]", Integer, "Minimum allowed allele depth. (Default = No filter)") do |ad|
 				args.adepth = ad if ad != nil
