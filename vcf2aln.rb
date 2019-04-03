@@ -198,7 +198,7 @@ class Parser
 			opts.on("-b", "--ambig", "Print SNP sites as ambiguity codes.") do
 				args.ambig = true
 			end
-			opts.on("-N", "--hap_flag", "Flag for haplotype data") do 
+			opts.on("-N", "--hap_flag", "Flag for haploid data") do 
 				args.hap_flag = true
 				args.onehap = true # Condense file writing
 			end
