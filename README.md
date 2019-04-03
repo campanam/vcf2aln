@@ -16,7 +16,7 @@ In the terminal:
 `cd vcf2aln`  
 `chmod +x vcf2aln.rb`  
 
-Optionally, the Ruby files (.rb files) can be placed within the users $PATH so that they can be executed from any location. Depending on your operating system, you may need to change the shebang lines in the scripts (first lines starting with #!) to specify the path of your Ruby executable.  
+Optionally, vcf2aln.rb can be placed within the users $PATH so that they can be executed from any location. Depending on your operating system, you may need to change the shebang lines in the scripts (first lines starting with #!) to specify the path of your Ruby executable.  
 
 ## Input  
 vcf2aln requires an all-sites VCF (e.g. such as one produced using EMIT_ALL_SITES in the [Genome Analysis Toolkit](https://software.broadinstitute.org/gatk/)).  
