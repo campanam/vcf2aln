@@ -186,7 +186,7 @@ class Parser
 			opts.on("-c", "--concatenate", "Concatenate markers into single alignment") do
 				args.concat = true
 			end
-			opts.on("-s", "--skip", "Skip missing sites in vcf") do
+			opts.on("-s", "--skip", "Skip missing sites in VCF") do
 				args.skip = true
 			end
 			opts.on("-O", "--onehap", "Print only one haplotype for diploid data") do
