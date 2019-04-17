@@ -29,7 +29,7 @@ Execute the script using `ruby vcf2aln.rb` (or `vcf2aln.rb` if the script is in 
 ### I/O options:  
 `-i, --input [FILE]`: Input VCF file.  
 `-o, --outprefix [VALUE]`: Output FASTA alignment prefix.  
-`-c, --concatenate`: Concatenate markers into single alignment (e.g. concatenate multiple separate chromosomes/contigs or disparate regions within a chromosome with unresolved gaps between them).  
+`-c, --concatenate`: Concatenate markers into single alignment (e.g. concatenate multiple separate chromosomes/contigs).  
 `-s, --skip`: Skip missing sites in VCF.  
 `-O, --onehap`: Print only one haplotype for diploid data. If phasing information is missing, it will generate a pseudohaplotype by randomly assigning one of the alleles.  
 `-a, --alts`: Print alternate (pseudo)haplotypes in same file.  
