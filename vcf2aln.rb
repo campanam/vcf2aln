@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.7.0"
+VCF2ALNVER = "0.8.0"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2019
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -12,6 +12,7 @@ require 'ostruct'
 
 class Locus
 	attr_accessor :name, :seqs, :alts, :length
+	#-------------------------------------------------------------------------------------------
 	def initialize(name = "", seqs = [], alts = [], length = 0)
 		@name = name
 		@seqs = seqs
@@ -38,6 +39,7 @@ class Locus
 			end
 		end
 	end
+	#-------------------------------------------------------------------------------------------
 	def write_seqs
 		@length += @seqs[0].length
 		for i in 0...$samples.size
@@ -63,83 +65,44 @@ class Locus
 			@alts[i] = "" unless $options.hap_flag
 		end
 	end
-	def print_locus(line_num)
-		#print "print_locus called at line #{line_num}", "\n"
+	#-------------------------------------------------------------------------------------------
+	def print_locus
 		@length += @seqs[0].length
-		if $options.split_regions == 0
-			for i in 0...$samples.size
-				if $options.onehap
-					File.open($samples[i] + "_#{$options.outprefix}#{@name}.tmp.fa", 'a') do |write|
-						write.puts @seqs[i]
-					end
-				else
-					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
-						write.puts @seqs[i]
-					end
-					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
-						write.puts @alts[i]
-					end
+		for i in 0...$samples.size
+			if $options.onehap
+				File.open($samples[i] + "_#{$options.outprefix}#{@name}.tmp.fa", 'a') do |write|
+					write.puts @seqs[i]
 				end
-				if $options.maxmissing < 100.0
-					@missinghap1[i] += @seqs[i].scan("?").length
-					@missinghap2[i] += @seqs[i].scan("?").length unless $options.hap_flag
-					if $options.onehap
-						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-					else
-						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-					end
-				end
-			end
-			if $options.alts
-				system("cat *#{$options.outprefix + @name}*.tmp.fa > #{$options.outprefix + @name + '.fa'}")
 			else
-				if $options.onehap
-					system("cat *#{$options.outprefix + @name}.tmp.fa > #{$options.outprefix + @name + '.fa'}")
-				else
-					system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '.hap1.fa'}")
-					system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '.hap2.fa'}")
+				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
+					write.puts @seqs[i]
+				end
+				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
+					write.puts @alts[i]
 				end
 			end
-			system("rm *#{$options.outprefix + @name}*.tmp.fa")
-		else
-			for i in 0...$samples.size
+			if $options.maxmissing < 100.0
+				@missinghap1[i] += @seqs[i].scan("?").length
+				@missinghap2[i] += @seqs[i].scan("?").length unless $options.hap_flag
 				if $options.onehap
-					File.open($samples[i] + "_#{$options.outprefix}#{@name}.tmp.fa", 'a') do |write|
-						write.puts @seqs[i]
-					end
+					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
 				else
-					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
-						write.puts @seqs[i]
-					end
-					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
-						write.puts @alts[i]
-					end
-				end
-				if $options.maxmissing < 100.0
-					@missinghap1[i] += @seqs[i].scan("?").length
-					@missinghap2[i] += @seqs[i].scan("?").length unless $options.hap_flag
-					if $options.onehap
-						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-					else
-						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-					end
+					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing
 				end
 			end
-			if $options.alts
-				system("cat *#{$options.outprefix + @name}*.tmp.fa > #{$options.outprefix + @name + '.fa'}")
-			else
-				if $options.onehap
-					system("cat *#{$options.outprefix + @name}.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.fa'}")
-				else
-					system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.hap1.fa'}")
-					system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '_region' + $num_regions.to_s + '.hap2.fa'}")
-				end
-			end
-			system("rm *#{$options.outprefix + @name}*.tmp.fa")
-			$num_regions += 1
 		end
+		if $options.alts
+			system("cat *#{$options.outprefix + @name}*.tmp.fa > #{$options.outprefix + @name + '.fa'}")
+		else
+			if $options.onehap
+				system("cat *#{$options.outprefix + @name}.tmp.fa > #{$options.outprefix + @name + '.fa'}")
+			else
+				system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '.hap1.fa'}")
+				system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '.hap2.fa'}")
+			end
+		end
+		system("rm *#{$options.outprefix + @name}*.tmp.fa")
 	end
 end
 #-----------------------------------------------------------------------------------------------
@@ -158,7 +121,8 @@ class Parser
 		args.onehap = false # Print only one haplotype
 		args.alts = false # Print alternate haplotypes in same file
 		args.ambig = false # Print SNPs as ambiguity codes
-		args.qual_filter = 0.0 #Minimum quality for site (QUAL column)
+		args.qual_filter = 0.0 # Minimum quality for site (QUAL column)
+		args.annot_filter = [] # Annotations to exclude
 		args.site_depth = nil #Minimum site coverage depth
 		args.type_fields = false #Don't display VCF genotype fields on default
 		args.sample_depth = 0 #Don't filter VCF calls based on depth by default
@@ -213,6 +177,9 @@ class Parser
 			opts.separator "Filtration options:"
 			opts.on("-m","--mincalls [VALUE]", Integer, "Minimum number of calls to include site (Default = 0)") do |msnps|
 				args.mincalls = msnps if msnps != nil
+			end
+			opts.on("--annotfilter [VALUE]", String, "Comma-separated list of FILTER annotations to exclude") do |annot|
+				args.annot_filter = annot.split(",") if annot != nil
 			end
 			opts.on("-x","--maxmissing [VALUE]", Float, "Maximum percent missing data to include sequence (Default = 100.0)") do |missing|
 				args.maxmissing = missing if missing != nil
@@ -303,7 +270,7 @@ def quality_filter(line_arr, gt_index, pgt_index)
 	# Leave if nothing to replace
 	return line_arr if genotypes.all? {|x| x == "./."}
 	found = false
-	found = true if site_qual.to_i < $options.qual_filter || (filter != 'PASS' && filter != ".")
+	found = true if site_qual.to_i < $options.qual_filter || ($options.annot_filter.include?(filter))
 	unless ($options.mq0f.nil? && $options.mqsb.nil? && $options.sample_mq.nil? && $options.site_depth.nil?) || found #Don't execute this loop if you're not trying to filter for any site-specific quality scores
 		#This loop will determine if any of your site-specific quality scores don't satisfy the specified conditions. (INFO column)
 		info_arr.each do |item|
@@ -338,7 +305,6 @@ def quality_filter(line_arr, gt_index, pgt_index)
 			break if found
 			for field in sample_info_fields do
 				break if found
-				
 				case field
 				when "GT", "PGT"
 					next
@@ -456,11 +422,15 @@ def get_GT_fields(vcf_file)
 	exit	
 end
 #-----------------------------------------------------------------------------------------------
-def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name, current_locus, prev_pos, line_num, write_cycle)
-	line_num += 1
+def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name, current_locus, prev_pos, write_cycle, region, regionval)
 	if line[0..1] == "#C"
 		$samples = line[0..-2].split("\t")[9..-1] # Get sample names
 	elsif line[0].chr != "#"
+		if $options.split_regions > 0 && regionval >= $options.split_regions # Change region name at break
+			region += 1
+			regionval = 0
+		end
+		regionval += 1
 		write_cycle += 1
 		line_arr = line.split("\t")
 		codes = line_arr[8].split(":") #GET PHASING LOCATION
@@ -478,19 +448,20 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 		end
 		line_arr = quality_filter(line_arr, gt_index, pgt_index) # Quality filter has to be called to check for GLE
 		$options.concat ? name = "concat_aln" : name = line_arr[0]
+		name << "_region" + region.to_s if $options.split_regions > 0
 		if name != current_locus.name
-			current_locus.print_locus(line_num) unless current_locus.name == ""
-			# puts "print_locus call from station A"
+			current_locus.print_locus unless current_locus.name == ""
 			seqs = []
 			alts = []
 			$samples.size.times do
 				seqs.push("")
 				alts.push("")
 			end
-			current_locus = Locus.new(name, seqs, alts)
+			current_locus = Locus.new(name, seqs, alts, region)
 			index = -1 # Set internal start index
 			previous_index = -1 # Index of previous ending base
 			previous_endex = 0 # End index of indels
+			regionval = 1
 		end
 		if line_arr[0] != previous_name # Reset indexes for concatenated alignments
 			current_locus.write_seqs
@@ -499,6 +470,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 			previous_index = -1
 			previous_endex = 0
 			previous_name = line_arr[0]
+			region = 1
 		end
 		if $samples.size - line.scan("./.").length - line.scan(".|.").length >= $options.mincalls
 			variants = [line_arr[3], line_arr[4].split(",")].flatten!
@@ -514,10 +486,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 				end
 				variants[i] = var # Variable scope handling
 			end
-			current_base = line_arr[1].to_i # Set starting base position
-
-					
-
+			current_base = line_arr[1].to_i # Set starting base position	
 			if current_base > previous_endex
 				for i in 0...$samples.size
 					unless $options.skip # Adjust for missing bases
@@ -526,7 +495,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 					end
 				end
 				if write_cycle >= $options.write_cycle
-					current_locus.write_seqs #Write sequence to end
+					current_locus.write_seqs
 					write_cycle = 0
 				end
 				index =  current_locus.seqs[0].size - 1
@@ -537,27 +506,8 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 				current_locus.seqs[i] << "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
 				current_locus.alts[i] << "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
 			end
-			#Changed from previous_index to previous_endex; I'm going to use that variable. (J)
-			#(Also Jacob) DON'T DO THAT!!!!!!!!!!!!!!!!!
 			index += current_base - previous_index
 			endex = index + lengths.max - 1 # Sequence end index
-					
-
-			#if current_base.to_i >= 0
-				#print "line_arr[3] ", line_arr[3], "\n"
-				#print "Current base, ", current_base, "\n"
-				#print "previous index ", previous_index, "\n"
-				#print "previous endex ", previous_endex, "\n"
-				#print "index, ", index, "\n"
-				#print "endex ", endex, "\n"	
-				#puts "current_locus.seqs[0].size: ", current_locus.seqs[0].size			
-				#for i in 9...line_arr.size	
-				#	print current_locus.seqs[i-9][index..endex], "\n"
-				#end
-						
-						
-			#end
-
 			unless $options.hap_flag #Accounting for ploidy
 				for i in 9...line_arr.size
 					vars = line_arr[i].split(":")[vars_index] # This code handles phasing and randomizes unphased diplotypes
@@ -614,36 +564,12 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 					end
 				end
 			end
-					
-			if (current_base - 1 - prev_pos) >= $options.split_regions && previous_index != -1 && $options.split_regions != 0
-				current_locus.print_locus(line_num)
-			#	puts "print_locus call from station B"
-			#	puts "current base: #{current_base}", "prev_pos: #{prev_pos}", "Difference: #{current_base - 1 - prev_pos}", "previous_index: #{previous_index}"
-
-				seqs = []
-				alts = []
-				$samples.size.times do
-					seqs.push("")
-					alts.push("")
-				end
-				current_locus = Locus.new(name, seqs, alts)
-				index = -1 # Set internal start index
-				previous_index = -1 # Index of previous ending base
-				previous_endex = 0 # End index of indels
-						
-						
-				current_locus.write_seqs
-				previous_index = -1
-				previous_endex = 0
-				prev_pos = current_base
-			else
-				previous_index = current_base
-				previous_endex = current_base + lengths.max - 1  if current_base + lengths.max - 1 > previous_endex
-				prev_pos = current_base
-			end
+			previous_index = current_base
+			previous_endex = current_base + lengths.max - 1  if current_base + lengths.max - 1 > previous_endex
+			prev_pos = current_base
 		end
 	end
-	return index, previous_index, previous_endex, previous_name, current_locus, prev_pos, line_num, write_cycle
+	return index, previous_index, previous_endex, previous_name, current_locus, prev_pos, write_cycle, region, regionval
 end
 #-----------------------------------------------------------------------------------------------
 def read_input
@@ -652,21 +578,20 @@ def read_input
 	previous_endex = 0 # End index of indels
 	previous_name = "" # Name comparator for concatenated alignments
 	current_locus = Locus.new("") # Current locus
-	$num_regions = 0
 	prev_pos = 0
-	line_num = 0
 	write_cycle = 0
+	region = 1
+	regionval = 0
 	if $options.pipe
-		ARGF.each_line { |line| index, previous_index, previous_endex, previous_name, current_locus, prev_pos, line_num, write_cycle = vcf_to_alignment(line, index, previous_index, previous_endex, previous_name, current_locus, prev_pos, line_num, write_cycle) }
+		ARGF.each_line { |line| index, previous_index, previous_endex, previous_name, current_locus, prev_pos, write_cycle, region, regionval = vcf_to_alignment(line, index, previous_index, previous_endex, previous_name, current_locus, prev_pos, write_cycle, region, regionval) }
 	else
 		File.open($options.infile, 'r') do |vcf2aln|
 	 		while line = vcf2aln.gets
-	 			index, previous_index, previous_endex, previous_name, current_locus, prev_pos, line_num, write_cycle = vcf_to_alignment(line, index, previous_index, previous_endex, previous_name, current_locus, prev_pos, line_num, write_cycle)
+	 			index, previous_index, previous_endex, previous_name, current_locus, prev_pos, write_cycle, region, regionval = vcf_to_alignment(line, index, previous_index, previous_endex, previous_name, current_locus, prev_pos, write_cycle, region, regionval)
 	 		end
 		end
 	end
-	current_locus.print_locus(line_num) # Print final alignment
-	#	puts "print_locus call from station C"
+	current_locus.print_locus # Print final alignment
 end
 #-----------------------------------------------------------------------------------------------
 ARGV[0] ||= "-h"
