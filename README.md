@@ -25,6 +25,9 @@ vcf2aln requires an all-sites VCF (e.g. such as one produced using EMIT_ALL_SITE
 Execute the script using `ruby vcf2aln.rb` (or `vcf2aln.rb` if the script is in your $PATH). This will display the help screen. Basic usage is as follows:  
 `ruby vcf2aln.rb -i <input_vcf> -o <out_prefix>` 
 
+vcf2aln can also be used in a pipe. For example, it can directly convert the output of [bcftools](https://samtools.github.io/bcftools/bcftools.html) as follows:  
+`samtools mpileup -f <reference.fa> <input bams> | bcftools call -m | ruby vcf2aln.rb --pipe -o <out_prefix>`  
+
 ## Available options  
 ### I/O options:  
 `-i, --input [FILE]`: Input VCF file.  
