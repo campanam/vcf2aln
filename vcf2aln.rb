@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.6.0"
+VCF2ALNVER = "0.7.0"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2019
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -148,6 +148,7 @@ class Parser
 		# Set defaults
 		args = OpenStruct.new
 		args.infile = "" # Primary input file
+		args.pipe = false # Read data from a pipe rather than an input file
 		args.outprefix = "" # Output prefix
 		args.hap_flag = false
 		args.concat = false # Concatenate markers into single alignment
@@ -179,6 +180,9 @@ class Parser
 			opts.separator "I/O options:"
 			opts.on("-i","--input [FILE]", String, "Input VCF file") do |vcf|
 				args.infile = vcf
+			end
+			opts.on("--pipe", "Read data from pipe") do
+				args.pipe = true
 			end
 			opts.on("-o", "--outprefix [VALUE]", String, "Output alignment prefix") do |pref|
 				args.outprefix = pref + "_" if pref != nil
@@ -256,6 +260,7 @@ class Parser
 			opts.separator "General information:"
 			opts.on("-t", "--typefields", "Display VCF genotype field information, then quit the program.") do
 				args.type_fields = true
+				args.pipe = false # Prevent crash from reading from pipe
 			end
 			opts.on("-W", "--writecycles", Integer, "Number of variants to store in memory before writing to disk. (Default = 1000000)") do |wrt|
 				args.write_cycle = wrt if wrt != nil
@@ -438,9 +443,7 @@ def get_GT_fields(vcf_file)
 			if line[0..12] == "##FORMAT=<ID="
 				fields_arr = line.split("Description")
 				field = fields_arr[0].split(",Number")[0][13..-1]
-				puts field
 				description = fields_arr[1][2...-3]
-				puts description
 				@fields[field] = description
 			end
 		end
@@ -453,7 +456,197 @@ def get_GT_fields(vcf_file)
 	exit	
 end
 #-----------------------------------------------------------------------------------------------
-def vcf_to_alignment
+def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name, current_locus, prev_pos, line_num, write_cycle)
+	line_num += 1
+	if line[0..1] == "#C"
+		$samples = line[0..-2].split("\t")[9..-1] # Get sample names
+	elsif line[0].chr != "#"
+		write_cycle += 1
+		line_arr = line.split("\t")
+		codes = line_arr[8].split(":") #GET PHASING LOCATION
+		pgt_index = nil
+		gt_index = nil
+		if codes.include?("PGT")
+			vars_index = codes.index("PGT")
+			pgt_index = vars_index
+			gt_index = codes.index("GT")
+		elsif codes.include?("GT")
+			vars_index = codes.index("GT")
+			gt_index = vars_index
+		else
+			vars_index = 0
+		end
+		line_arr = quality_filter(line_arr, gt_index, pgt_index) # Quality filter has to be called to check for GLE
+		$options.concat ? name = "concat_aln" : name = line_arr[0]
+		if name != current_locus.name
+			current_locus.print_locus(line_num) unless current_locus.name == ""
+			# puts "print_locus call from station A"
+			seqs = []
+			alts = []
+			$samples.size.times do
+				seqs.push("")
+				alts.push("")
+			end
+			current_locus = Locus.new(name, seqs, alts)
+			index = -1 # Set internal start index
+			previous_index = -1 # Index of previous ending base
+			previous_endex = 0 # End index of indels
+		end
+		if line_arr[0] != previous_name # Reset indexes for concatenated alignments
+			current_locus.write_seqs
+			index = -1
+			write_cycle = 1
+			previous_index = -1
+			previous_endex = 0
+			previous_name = line_arr[0]
+		end
+		if $samples.size - line.scan("./.").length - line.scan(".|.").length >= $options.mincalls
+			variants = [line_arr[3], line_arr[4].split(",")].flatten!
+			lengths =[] # Get sequence lengths for indels
+			for var in variants
+				lengths.push(var.length)
+			end
+			for i in 0...variants.size
+				var = variants[i]
+				if var.length < lengths.max
+					(lengths.max-var.length).times {var += "-"} # Increase length with gaps. Assumes all indels properly aligned (may need local realignment for multiallelic sites)
+					var[0] = variants[0][0] if var[0].chr == "." # Replace with character from reference if needed
+				end
+				variants[i] = var # Variable scope handling
+			end
+			current_base = line_arr[1].to_i # Set starting base position
+
+					
+
+			if current_base > previous_endex
+				for i in 0...$samples.size
+					unless $options.skip # Adjust for missing bases
+						current_locus.seqs[i] << "?" * (current_base - 1 - previous_endex)
+						current_locus.alts[i] << "?" * (current_base - 1 - previous_endex)
+					end
+				end
+				if write_cycle >= $options.write_cycle
+					current_locus.write_seqs #Write sequence to end
+					write_cycle = 0
+				end
+				index =  current_locus.seqs[0].size - 1
+				previous_index = current_base - 1
+				previous_endex = current_base - 1
+			end
+			for i in 0...$samples.size # Adjust locus lengths
+				current_locus.seqs[i] << "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
+				current_locus.alts[i] << "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
+			end
+			#Changed from previous_index to previous_endex; I'm going to use that variable. (J)
+			#(Also Jacob) DON'T DO THAT!!!!!!!!!!!!!!!!!
+			index += current_base - previous_index
+			endex = index + lengths.max - 1 # Sequence end index
+					
+
+			#if current_base.to_i >= 0
+				#print "line_arr[3] ", line_arr[3], "\n"
+				#print "Current base, ", current_base, "\n"
+				#print "previous index ", previous_index, "\n"
+				#print "previous endex ", previous_endex, "\n"
+				#print "index, ", index, "\n"
+				#print "endex ", endex, "\n"	
+				#puts "current_locus.seqs[0].size: ", current_locus.seqs[0].size			
+				#for i in 9...line_arr.size	
+				#	print current_locus.seqs[i-9][index..endex], "\n"
+				#end
+						
+						
+			#end
+
+			unless $options.hap_flag #Accounting for ploidy
+				for i in 9...line_arr.size
+					vars = line_arr[i].split(":")[vars_index] # This code handles phasing and randomizes unphased diplotypes
+					vars = line_arr[i].split(":")[gt_index] if (codes.include?("PGT") && vars[0].chr == ".") # Correction for homozygous reference phasing
+					randvar = rand(2)
+					if !$options.ambig or endex - index > 0 # Phase haplotypes even in ambiguity situations
+						if vars[0].chr != "." # Code below uses string replacement due to multiallelic sites having same start index
+							if vars[1].chr == "|" or randvar == 0
+								current_locus.seqs[i-9][index..endex] = variants[vars[0].to_i]
+							else
+								current_locus.alts[i-9][index..endex] = variants[vars[0].to_i]
+							end
+						else
+							if vars[1].chr == "|" or randvar == 0
+								current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
+							else
+								current_locus.alts[i-9][index..endex] = "?" * (endex - index + 1)
+							end
+						end
+						if vars[2].chr != "."
+							if vars[1].chr == "|" or randvar == 0
+								current_locus.alts[i-9][index..endex] = variants[vars[2].to_i]
+							else
+								current_locus.seqs[i-9][index..endex] = variants[vars[2].to_i]
+							end
+						else
+							if vars[1].chr == "|" or randvar == 1
+								current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
+							else
+								current_locus.alts[i-9][index..endex] = "?" * (endex - index + 1)
+							end
+						end
+					elsif $options.ambig
+						if vars[0] == "." and vars[2] == "."
+							code = "?"
+						elsif vars[0] == "."
+							code = variants[vars[2].to_i]
+						elsif vars[1] == "."
+							code = variants[vars[0].to_i]
+						else
+							code = get_ambiguity_code(variants[vars[0].to_i].upcase, variants[vars[2].to_i].upcase)
+						end
+						current_locus.seqs[i-9][index..endex] = code
+						current_locus.alts[i-9][index..endex] = code
+					end
+				end
+			else
+				for i in 9...line_arr.size
+					vars = line_arr[i].split(":")[vars_index]
+					if vars == "."
+						current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
+					else 
+						current_locus.seqs[i-9][index..endex] = variants[vars.to_i]
+					end
+				end
+			end
+					
+			if (current_base - 1 - prev_pos) >= $options.split_regions && previous_index != -1 && $options.split_regions != 0
+				current_locus.print_locus(line_num)
+			#	puts "print_locus call from station B"
+			#	puts "current base: #{current_base}", "prev_pos: #{prev_pos}", "Difference: #{current_base - 1 - prev_pos}", "previous_index: #{previous_index}"
+
+				seqs = []
+				alts = []
+				$samples.size.times do
+					seqs.push("")
+					alts.push("")
+				end
+				current_locus = Locus.new(name, seqs, alts)
+				index = -1 # Set internal start index
+				previous_index = -1 # Index of previous ending base
+				previous_endex = 0 # End index of indels
+						
+						
+				current_locus.write_seqs
+				previous_index = -1
+				previous_endex = 0
+				prev_pos = current_base
+			else
+				previous_index = current_base
+				previous_endex = current_base + lengths.max - 1  if current_base + lengths.max - 1 > previous_endex
+				prev_pos = current_base
+			end
+		end
+	end
+	return index, previous_index, previous_endex, previous_name, current_locus, prev_pos, line_num, write_cycle
+end
+#-----------------------------------------------------------------------------------------------
+def read_input
 	index = -1 # Set internal start index
 	previous_index = -1 # Index of previous ending base
 	previous_endex = 0 # End index of indels
@@ -463,207 +656,29 @@ def vcf_to_alignment
 	prev_pos = 0
 	line_num = 0
 	write_cycle = 0
-	File.open($options.infile, 'r') do |vcf2aln|
-		while line = vcf2aln.gets
-			line_num += 1
-			if line[0..1] == "#C"
-				$samples = line[0..-2].split("\t")[9..-1] # Get sample names
-			elsif line[0].chr != "#"
-				write_cycle += 1
-				line_arr = line.split("\t")
-				codes = line_arr[8].split(":") #GET PHASING LOCATION
-				pgt_index = nil
-				gt_index = nil
-				if codes.include?("PGT")
-					vars_index = codes.index("PGT")
-					pgt_index = vars_index
-					gt_index = codes.index("GT")
-				elsif codes.include?("GT")
-					vars_index = codes.index("GT")
-					gt_index = vars_index
-				else
-					vars_index = 0
-				end
-				line_arr = quality_filter(line_arr, gt_index, pgt_index) # Quality filter has to be called to check for GLE
-				$options.concat ? name = "concat_aln" : name = line_arr[0]
-				if name != current_locus.name
-					current_locus.print_locus(line_num) unless current_locus.name == ""
-					# puts "print_locus call from station A"
-					seqs = []
-					alts = []
-					$samples.size.times do
-						seqs.push("")
-						alts.push("")
-					end
-					current_locus = Locus.new(name, seqs, alts)
-					index = -1 # Set internal start index
-					previous_index = -1 # Index of previous ending base
-					previous_endex = 0 # End index of indels
-				end
-				if line_arr[0] != previous_name # Reset indexes for concatenated alignments
-					current_locus.write_seqs
-					index = -1
-					write_cycle = 1
-					previous_index = -1
-					previous_endex = 0
-					previous_name = line_arr[0]
-				end
-				if $samples.size - line.scan("./.").length - line.scan(".|.").length >= $options.mincalls
-					variants = [line_arr[3], line_arr[4].split(",")].flatten!
-					lengths =[] # Get sequence lengths for indels
-					for var in variants
-						lengths.push(var.length)
-					end
-					for i in 0...variants.size
-						var = variants[i]
-						if var.length < lengths.max
-							(lengths.max-var.length).times {var += "-"} # Increase length with gaps. Assumes all indels properly aligned (may need local realignment for multiallelic sites)
-							var[0] = variants[0][0] if var[0].chr == "." # Replace with character from reference if needed
-						end
-						variants[i] = var # Variable scope handling
-					end
-					current_base = line_arr[1].to_i # Set starting base position
-
-					
-
-					if current_base > previous_endex
-						for i in 0...$samples.size
-							unless $options.skip # Adjust for missing bases
-								current_locus.seqs[i] << "?" * (current_base - 1 - previous_endex)
-								current_locus.alts[i] << "?" * (current_base - 1 - previous_endex)
-							end
-						end
-						if write_cycle >= $options.write_cycle
-							current_locus.write_seqs #Write sequence to end
-							write_cycle = 0
-						end
-						index =  current_locus.seqs[0].size - 1
-						previous_index = current_base - 1
-						previous_endex = current_base - 1
-					end
-					for i in 0...$samples.size # Adjust locus lengths
-						current_locus.seqs[i] << "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
-						current_locus.alts[i] << "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
-					end
-					#Changed from previous_index to previous_endex; I'm going to use that variable. (J)
-					#(Also Jacob) DON'T DO THAT!!!!!!!!!!!!!!!!!
-					index += current_base - previous_index
-					endex = index + lengths.max - 1 # Sequence end index
-					
-
-					#if current_base.to_i >= 0
-						#print "line_arr[3] ", line_arr[3], "\n"
-						#print "Current base, ", current_base, "\n"
-						#print "previous index ", previous_index, "\n"
-						#print "previous endex ", previous_endex, "\n"
-						#print "index, ", index, "\n"
-						#print "endex ", endex, "\n"	
-						#puts "current_locus.seqs[0].size: ", current_locus.seqs[0].size			
-						#for i in 9...line_arr.size	
-						#	print current_locus.seqs[i-9][index..endex], "\n"
-						#end
-						
-						
-					#end
-
-					unless $options.hap_flag #Accounting for ploidy
-						for i in 9...line_arr.size
-							vars = line_arr[i].split(":")[vars_index] # This code handles phasing and randomizes unphased diplotypes
-							vars = line_arr[i].split(":")[gt_index] if (codes.include?("PGT") && vars[0].chr == ".") # Correction for homozygous reference phasing
-							randvar = rand(2)
-							if !$options.ambig or endex - index > 0 # Phase haplotypes even in ambiguity situations
-								if vars[0].chr != "." # Code below uses string replacement due to multiallelic sites having same start index
-									if vars[1].chr == "|" or randvar == 0
-										current_locus.seqs[i-9][index..endex] = variants[vars[0].to_i]
-									else
-										current_locus.alts[i-9][index..endex] = variants[vars[0].to_i]
-									end
-								else
-									if vars[1].chr == "|" or randvar == 0
-										current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
-									else
-										current_locus.alts[i-9][index..endex] = "?" * (endex - index + 1)
-									end
-								end
-								if vars[2].chr != "."
-									if vars[1].chr == "|" or randvar == 0
-										current_locus.alts[i-9][index..endex] = variants[vars[2].to_i]
-									else
-										current_locus.seqs[i-9][index..endex] = variants[vars[2].to_i]
-									end
-								else
-									if vars[1].chr == "|" or randvar == 1
-										current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
-									else
-										current_locus.alts[i-9][index..endex] = "?" * (endex - index + 1)
-									end
-								end
-							elsif $options.ambig
-								if vars[0] == "." and vars[2] == "."
-									code = "?"
-								elsif vars[0] == "."
-									code = variants[vars[2].to_i]
-								elsif vars[1] == "."
-									code = variants[vars[0].to_i]
-								else
-									code = get_ambiguity_code(variants[vars[0].to_i].upcase, variants[vars[2].to_i].upcase)
-								end
-								current_locus.seqs[i-9][index..endex] = code
-								current_locus.alts[i-9][index..endex] = code
-							end
-						end
-					else
-						for i in 9...line_arr.size
-							vars = line_arr[i].split(":")[vars_index]
-							if vars == "."
-								current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
-							else 
-								current_locus.seqs[i-9][index..endex] = variants[vars.to_i]
-							end
-						end
-					end
-					
-					if (current_base - 1 - prev_pos) >= $options.split_regions && previous_index != -1 && $options.split_regions != 0
-						current_locus.print_locus(line_num)
-					#	puts "print_locus call from station B"
-					#	puts "current base: #{current_base}", "prev_pos: #{prev_pos}", "Difference: #{current_base - 1 - prev_pos}", "previous_index: #{previous_index}"
-
-						seqs = []
-						alts = []
-						$samples.size.times do
-							seqs.push("")
-							alts.push("")
-						end
-						current_locus = Locus.new(name, seqs, alts)
-						index = -1 # Set internal start index
-						previous_index = -1 # Index of previous ending base
-						previous_endex = 0 # End index of indels
-						
-						
-						current_locus.write_seqs
-						previous_index = -1
-						previous_endex = 0
-						prev_pos = current_base
-					else
-						previous_index = current_base
-						previous_endex = current_base + lengths.max - 1  if current_base + lengths.max - 1 > previous_endex
-						prev_pos = current_base
-					end
-				end
-			end
+	if $options.pipe
+		ARGF.each_line { |line| index, previous_index, previous_endex, previous_name, current_locus, prev_pos, line_num, write_cycle = vcf_to_alignment(line, index, previous_index, previous_endex, previous_name, current_locus, prev_pos, line_num, write_cycle) }
+	else
+		File.open($options.infile, 'r') do |vcf2aln|
+	 		while line = vcf2aln.gets
+	 			index, previous_index, previous_endex, previous_name, current_locus, prev_pos, line_num, write_cycle = vcf_to_alignment(line, index, previous_index, previous_endex, previous_name, current_locus, prev_pos, line_num, write_cycle)
+	 		end
 		end
-		current_locus.print_locus(line_num) # Print final alignment
-	#	puts "print_locus call from station C"
 	end
+	current_locus.print_locus(line_num) # Print final alignment
+	#	puts "print_locus call from station C"
 end
 #-----------------------------------------------------------------------------------------------
 ARGV[0] ||= "-h"
 $options = Parser.parse(ARGV)
-while !FileTest.exist?($options.infile)
-	print "Input file not found. Please re-enter.\n"
-	$options.infile = gets.chomp
+if $options.pipe
+	ARGV.clear # Clear the input array for piping to ARGF
+else
+	while !FileTest.exist?($options.infile)
+		print "Input file not found. Please re-enter.\n"
+		$options.infile = gets.chomp
+	end
 end
 build_ambig_hash if $options.ambig
 get_GT_fields($options.infile) if $options.type_fields
-vcf_to_alignment
-
+read_input
