@@ -1,5 +1,5 @@
 # vcf2aln
-Script to convert multi-sample VCFs to FASTA alignments without assuming the reference sequence when data are missing. Users can apply a variety of data filters, produce phased/unphased, concatenated/split alignments, etc.  
+Script to convert multi-sample VCFs to FASTA alignments without assuming the reference sequence when data are missing. Users can apply a variety of data filters, produce phased/unphased, concatenated/split alignments, etc. VCF data can be read either from previously generated files or from piped uncompressed VCF streams.    
 
 ## Authors
 Michael G. Campana & Jacob A. West-Roberts, 2017-2019  
@@ -28,6 +28,7 @@ Execute the script using `ruby vcf2aln.rb` (or `vcf2aln.rb` if the script is in 
 ## Available options  
 ### I/O options:  
 `-i, --input [FILE]`: Input VCF file.  
+`--pipe`: Read data from an uncompressed VCF stream rather than a file.  
 `-o, --outprefix [VALUE]`: Output FASTA alignment prefix.  
 `-c, --concatenate`: Concatenate markers into single alignment (e.g. concatenate multiple separate chromosomes/contigs).  
 `-s, --skip`: Skip missing sites in VCF.  
