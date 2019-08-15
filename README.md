@@ -26,7 +26,7 @@ Execute the script using `ruby vcf2aln.rb` (or `vcf2aln.rb` if the script is in 
 `ruby vcf2aln.rb -i <input_vcf> -o <out_prefix>` 
 
 vcf2aln can also be used in a pipe. For example, it can directly convert the output of [bcftools](https://samtools.github.io/bcftools/bcftools.html) as follows:  
-`samtools mpileup -f <reference.fa> <input bams> | bcftools call -m | ruby vcf2aln.rb --pipe -o <out_prefix>`  
+`samtools mpileup -f <ref.fa> *.bam | bcftools call -m | ruby vcf2aln.rb --pipe -o <out_prefix>`  
 
 ## Available options  
 ### I/O options:  
