@@ -3,6 +3,10 @@ Michael G. Campana & Jacob A. West-Roberts, 2017-2019
 Smithsonian Conservation Biology Institute  
 Contact: campanam@si.edu  
 
+### Version 0.8.0  
+--annotfilter option controls FILTER value filtration  
+--split_regions is now functional  
+
 ### Version 0.7.0  
 vcf2aln can read streamed uncompressed VCF  
 Removed extraneous debugging output from get_GT_tags  
