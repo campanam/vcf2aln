@@ -39,12 +39,13 @@ vcf2aln can also be used in a pipe. For example, it can directly convert the out
 `-a, --alts`: Print alternate (pseudo)haplotypes in same file.  
 `-b, --ambig`: Print SNP sites as ambiguity codes.  
 `-N, --hap_flag`: Data are haploid.  
-`-g, --split_regions [VALUE]`: Split alignment into subregional alignments for phylogenetic analysis. *DO NOT USE: UNDER DEVELOPMENT*  
+`-g, --split_regions [VALUE]`: Split alignment into subregional alignments of the specified length for phylogenetic analysis.  
 
 ### Filtration options:  
 `-m, --mincalls [VALUE]`: Minimum number of individuals called to include site (Default = 0).  
 `-x, --maxmissing [VALUE]`: Maximum percent missing data to include sequence (Default = 100.0).  
 `-q, --qual_filter [VALUE]`: Minimum accepted value for QUAL (per site) (Default = 0.0).  
+`--annotfilter [VALUE]`: Comma-separated list of FILTER annotations to exclude.  
 `-y, --site_depth [VALUE]`: Minimum desired total depth for each site (Default = No filter).  
 `-d, --sampledepth [VALUE]`: Minimum allowed sample depth for each site (Default = No filter).  
 `-l, --likelihood [VALUE]`: Minimum allowed genotype log-likelihood (At least one option must satisfy this value).  
