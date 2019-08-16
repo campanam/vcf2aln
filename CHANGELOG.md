@@ -3,6 +3,10 @@ Michael G. Campana & Jacob A. West-Roberts, 2017-2019
 Smithsonian Conservation Biology Institute  
 Contact: campanam@si.edu  
 
+### Version 0.10.0  
+Probabilistic pseudohaplotype calling  
+Minimum samples called as a percentage option  
+
 ### Version 0.9.0  
 Sample-specific filters no longer filter whole line  
 Completely filtered sites are excluded by the skip option  
