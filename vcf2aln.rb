@@ -220,7 +220,7 @@ class Parser
 			opts.on("-S", "--mqsb [VALUE]", Float, "Minimum allowed value for MQSB. (Default = No filter)") do |sb|
 				args.mqsb = sb if sb != nil
 			end
-			opts.on("-A", "--adepth [VALUE]", Integer, "Minimum allowed allele depth (tag AD). (Default = No filter)") do |ad|
+			opts.on("-A", "--ad [VALUE]", Integer, "Minimum allowed allele depth (tag AD). (Default = No filter)") do |ad|
 				args.adepth = ad if ad != nil
 			end
 			opts.separator ""
