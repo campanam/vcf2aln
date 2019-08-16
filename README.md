@@ -48,16 +48,16 @@ vcf2aln can also be used in a pipe. For example, it can directly convert the out
 `--annotfilter [VALUE]`: Comma-separated list of FILTER annotations to exclude.  
 `-y, --site_depth [VALUE]`: Minimum desired total depth for each site (Default = No filter).  
 `-d, --sampledepth [VALUE]`: Minimum allowed sample depth for each site (Default = No filter).  
-`-l, --likelihood [VALUE]`: Minimum allowed genotype log-likelihood (At least one option must satisfy this value).  
-`-p, --phred [VALUE]`: Minimum accepted phred-scaled genotype likelihood (Default = No filter).  
-`-P, --posterior [VALUE]`: Minimum accepted phred-scaled genotype posterior probability (Default = No filter).  
-`-C, --conditional [VALUE]`: Minimum conditional genotype quality (phred-encoded) (Default = No filter).  
-`-H, --haplotype_quality [VALUE]`: Minimum allowed haplotype quality (phred-encoded) (Default = No filter).  
+`-l, --gl [VALUE]`: Minimum allowed genotype log-likelihood (tag GL). At least one value must exceed this minimum. (Default = No filter).  
+`-p, --pl [VALUE]`: Minimum accepted phred-scaled genotype likelihood (tag PL). At least one value must exceed this minimum. (Default = No filter).  
+`-G, --gp [VALUE]`: Minimum accepted phred-scaled genotype posterior probability (tag GP). At least one value must exceed this minimum. (Default = No filter).  
+`-C, --gq [VALUE]`: Minimum conditional phred-encdoed genotype quality (tag GQ). (Default = No filter).  
+`-H, --hq [VALUE]`: Minimum allowed phred-encoded haplotype quality (tag HQ). (Default = No filter)  
 `-r, --sample_mq [VALUE]`: Minimum allowed per-sample RMS mapping quality (Default = No filter).  
 `-R, --site_mq [VALUE]`: Minimum allowed per-site mapping quality (MQ in INFO) (Default = No filter).  
 `-F, --mq0f [VALUE]`: Maximum allowed value for MQ0F. Must be between 0 and 1. (Default = No filter).  
 `-S, --mqsb [VALUE]`: Minimum allowed value for MQSB. (Default = No filter).  
-`-A, --adepth [VALUE]`: Minimum allowed allele depth. (Default = No filter).  
+`-A, --ad [VALUE]`: Minimum allowed allele depth (tag AD). (Default = No filter).  
 
 ### General information:
 `-t, --typefields`: Display VCF genotype field information, then quit the program.  
