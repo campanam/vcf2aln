@@ -35,17 +35,19 @@ vcf2aln can also be used in a pipe. For example, it can directly convert the out
 `-o, --outprefix [VALUE]`: Output FASTA alignment prefix.  
 `-c, --concatenate`: Concatenate markers into single alignment (e.g. concatenate multiple separate chromosomes/contigs).  
 `-s, --skip`: Skip missing sites in VCF.  
-`-O, --onehap`: Print only one haplotype for diploid data. If phasing information is missing, it will generate a pseudohaplotype by randomly assigning one of the alleles.  
-`-a, --alts`: Print alternate (pseudo)haplotypes in same file.  
-`-b, --ambig`: Print SNP sites as ambiguity codes.  
+`-O, --onehap`: Print only one haplotype for diploid data. If phasing information is missing, it will generate a pseudohaplotype by randomly assigning one of the alleles. Conflicts with -a.  
+`--probpseudohap`: Generate a single probabilistic psuedohaplotype using allelic depth. Requires AD tag. Implies -O and conflicts with -a, -b.  
+`-a, --alts`: Print alternate (pseudo)haplotypes in same file. Conflicts with -O, --probpseudohap.  
+`-b, --ambig`: Print SNP sites as ambiguity codes. Conflicts with --probpseudohap.  
 `-N, --hap_flag`: Data are haploid.  
 `-g, --split_regions [VALUE]`: Split alignment into subregional alignments of the specified length for phylogenetic analysis.  
 
 ### Filtration options:  
-`-m, --mincalls [VALUE]`: Minimum number of individuals called to include site (Default = 0).  
+`-m, --mincalls [VALUE]`: Minimum number of samples called to include site (Default = 0).  
+`-M, --minpercent [VALUE]`: Minimum percentage of samples called to include site (Default = 0.0).  
 `-x, --maxmissing [VALUE]`: Maximum percent missing data to include sequence (Default = 100.0).  
-`-q, --qual_filter [VALUE]`: Minimum accepted value for QUAL (per site) (Default = 0.0).  
 `--annotfilter [VALUE]`: Comma-separated list of FILTER annotations to exclude.  
+`-q, --qual_filter [VALUE]`: Minimum accepted value for QUAL (per site) (Default = 0.0).  
 `-y, --site_depth [VALUE]`: Minimum desired total depth for each site (Default = No filter).  
 `-d, --sampledepth [VALUE]`: Minimum allowed sample depth for each site (Default = No filter).  
 `-l, --gl [VALUE]`: Minimum allowed genotype log-likelihood (tag GL). At least one value must exceed this minimum. (Default = No filter).  
