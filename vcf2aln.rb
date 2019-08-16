@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.9.0"
+VCF2ALNVER = "0.10.0"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2019
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -116,9 +116,11 @@ class Parser
 		args.hap_flag = false
 		args.concat = false # Concatenate markers into single alignment
 		args.skip = false # Skip missing sites in vcf
-		args.mincalls = 0 # Minimum number of calls to include site
+		args.mincalls = 0 # Minimum number of sample calls to include site
+		args.minpercent = 0.0 # Minimum percent of sample calls to include site
 		args.maxmissing = 100.0 # Maximum percent missing data to include sequence
 		args.onehap = false # Print only one haplotype
+		args.probps = false # Probabilistic pseudohaplotype
 		args.alts = false # Print alternate haplotypes in same file
 		args.ambig = false # Print SNPs as ambiguity codes
 		args.qual_filter = 0.0 # Minimum quality for site (QUAL column)
@@ -157,14 +159,20 @@ class Parser
 			opts.on("-s", "--skip", "Skip missing sites in VCF") do
 				args.skip = true
 			end
-			opts.on("-O", "--onehap", "Print only one haplotype for diploid data") do
+			opts.on("-O", "--onehap", "Print only one haplotype for diploid data (conflicts with -a)") do
 				args.onehap = true
 			end
+			opts.on("--probpseudohap", "Probabilistic pseudohaplotype based on allelic depth (implies -O, conflicts with -a, -b)") do
+				args.probps = true
+				args.onehap = true
+				args.alts = false
+				args.ambig = false
+			end
 			opts.on("-a", "--alts", "Print alternate haplotypes in same file") do
-				args.alts = true
+				args.alts = true unless args.probps
 			end
 			opts.on("-b", "--ambig", "Print SNP sites as ambiguity codes.") do
-				args.ambig = true
+				args.ambig = true unless args.probps
 			end
 			opts.on("-N", "--hap_flag", "Flag for haploid data") do 
 				args.hap_flag = true
@@ -175,14 +183,17 @@ class Parser
 			end
 			opts.separator ""
 			opts.separator "Filtration options:"
-			opts.on("-m","--mincalls [VALUE]", Integer, "Minimum number of calls to include site (Default = 0)") do |msnps|
+			opts.on("-m","--mincalls [VALUE]", Integer, "Minimum number of sample calls to include site (Default = 0)") do |msnps|
 				args.mincalls = msnps if msnps != nil
+			end
+			opts.on("-M", "--minpercent [VALUE]", Float, "Minimum percentage of sample calls to include site (Default = 0.0)") do |mpc|
+				args.minpercent = mpc if mpc != nil
+			end
+			opts.on("-x","--maxmissing [VALUE]", Float, "Maximum sample percent missing data to include sequence (Default = 100.0)") do |missing|
+				args.maxmissing = missing if missing != nil
 			end
 			opts.on("--annotfilter [VALUE]", String, "Comma-separated list of FILTER annotations to exclude") do |annot|
 				args.annot_filter = annot.split(",") if annot != nil
-			end
-			opts.on("-x","--maxmissing [VALUE]", Float, "Maximum percent missing data to include sequence (Default = 100.0)") do |missing|
-				args.maxmissing = missing if missing != nil
 			end
 			opts.on("-q", "--qual_filter [VALUE]", Integer, "Minimum accepted value for QUAL (per site) (Default = 0.0)") do |qual|
 				args.qual_filter = qual if qual != nil
@@ -468,11 +479,14 @@ end
 def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name, current_locus, prev_pos, write_cycle, region, regionval)
 	if line[0..1] == "#C"
 		$samples = line[0..-2].split("\t")[9..-1] # Get sample names
+		minpc = ($samples.size.to_f * $options.minpercent / 100.0).ceil
+		$options.mincalls = minpc if minpc > $options.mincalls
 	elsif line[0].chr != "#"
 		line_arr = line[0...-1].split("\t") # Exclude final line break
 		codes = line_arr[8].split(":") #GET PHASING LOCATION
 		pgt_index = nil
 		gt_index = nil
+		ad_index = nil
 		if codes.include?("PGT")
 			vars_index = codes.index("PGT")
 			pgt_index = vars_index
@@ -482,6 +496,14 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 			gt_index = vars_index
 		else
 			vars_index = 0
+		end
+		if $options.adepth
+			if codes.include?("AD")
+				ad_index = codes.index("AD")
+			else
+				puts "** Site missing AD tag **"
+				puts "** Treating haplotypes as equally likely for line: #{line} **"
+			end
 		end
 		line_arr = quality_filter(line_arr, gt_index, pgt_index) # Quality filter has to be called to check for GLE
 		return index, previous_index, previous_endex, previous_name, current_locus, prev_pos, write_cycle, region, regionval if line_arr == "all_filtered"
@@ -556,7 +578,33 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 				for i in 9...line_arr.size
 					vars = line_arr[i].split(":")[vars_index] # This code handles phasing and randomizes unphased diplotypes
 					vars = line_arr[i].split(":")[gt_index] if (codes.include?("PGT") && vars[0].chr == ".") # Correction for homozygous reference phasing
-					randvar = rand(2)
+					if $options.probps && !ad_index.nil? && vars != "./." && vars != ".|."
+						ad_arr = line_arr[i].split(":")[ad_index].split(",").map { |x| x.to_i }
+						if $options.adepth
+							new_ad = []
+							for ad in ad_arr
+								ad = 0 if ad < $options.adepth
+								new_ad.push(ad)
+							end
+							ad_arr = new_ad
+						end
+						ad_arr_sum = 0 # Code here for backwards compatibility since macOS only has Ruby 2.0
+						for ad in ad_arr
+							ad_arr_sum += ad
+						end 
+						randvar = rand(ad_arr_sum)
+						ad_sum = 0
+						for ad in ad_arr
+							ad_sum += ad
+							if randvar <= ad_sum - 1
+								vars[0] = vars[2] = ad_arr.index(ad).to_s
+								break
+							end
+						end
+						randvar = 0
+					else
+						randvar = rand(2)
+					end
 					if !$options.ambig or endex - index > 0 # Phase haplotypes even in ambiguity situations
 						if vars[0].chr != "." # Code below uses string replacement due to multiallelic sites having same start index
 							if vars[1].chr == "|" or randvar == 0
