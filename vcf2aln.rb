@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.8.0"
+VCF2ALNVER = "0.9.0"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2019
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -193,25 +193,25 @@ class Parser
 			opts.on("-d", "--sampledepth [VALUE]", Integer, "Minimum allowed sample depth for each site (Default = No filter)") do |depth|
 				args.sample_depth = depth if depth != nil
 			end
-			opts.on("-l", "--likelihood [VALUE]", Float, "Minimum allowed genotype log-likelihood (At least one option must satisfy this value)") do |likelihood|
+			opts.on("-l", "--gl [VALUE]", Float, "Minimum allowed genotype log-likelihood (tag GL). (Default = No filter)") do |likelihood|
 				args.min_ll = likelihood if likelihood != nil
 			end
-			opts.on("-p", "--phred [VALUE]", Integer, "Minimum accepted phred-scaled genotype likelihood (Default = No filter)") do |phreddy|
+			opts.on("-p", "--pl [VALUE]", Integer, "Minimum accepted phred-scaled genotype likelihood (tag PL). (Default = No filter)") do |phreddy|
 				args.phred_likelihood = phreddy if phreddy != nil
 			end
-			opts.on("-P", "--posterior [VALUE]", Float, "Minimum accepted phred-scaled genotype posterior probability (Default = No filter)") do |post|
+			opts.on("-G", "--gp [VALUE]", Float, "Minimum accepted phred-scaled genotype posterior probability (tag GP). (Default = No filter)") do |post|
 				args.posterior = post if post != nil
 			end
-			opts.on("-C", "--conditional [VALUE]", Float, "Minimum conditional genotype quality (phred-encoded) (Default = No filter)") do |condi|
+			opts.on("-C", "--gq [VALUE]", Float, "Minimum conditional phred-encdoed genotype quality (tag GQ). (Default = No filter)") do |condi|
 				args.conditional = condi if condi != nil
 			end
-			opts.on("-H", "--haplotype_quality [VALUE]", Integer, "Minimum allowed haplotype quality (phred-encoded) (Default = No filter)") do |haplo|
+			opts.on("-H", "--hq [VALUE]", Integer, "Minimum allowed phred-encoded haplotype quality (tag HQ). (Default = No filter)") do |haplo|
 				args.hap_qual = haplo if haplo != nil
 			end
-			opts.on("-r", "--sample_mq [VALUE]", Integer, "Minimum allowed per-sample RMS mapping quality (Default = No filter)") do |map_quality|
+			opts.on("-r", "--sample_mq [VALUE]", Integer, "Minimum allowed per-sample RMS mapping quality (tag MQ). (Default = No filter)") do |map_quality|
 				args.sample_mq = map_quality if map_quality != nil
 			end
-			opts.on("-R", "--site_mq [VALUE]", Integer, "Minimum allowed per-site mapping quality (MQ in INFO) (Default = No filter)") do |mq|
+			opts.on("-R", "--site_mq [VALUE]", Integer, "Minimum allowed per-site mapping quality (MQ in INFO). (Default = No filter)") do |mq|
 				args.site_mq = mq if mq != nil
 			end
 			opts.on("-F", "--mq0f [VALUE]", Float, "Maximum allowed value for MQ0F. Must be between 0 and 1. (Default = No filter)") do |mqf|
@@ -220,7 +220,7 @@ class Parser
 			opts.on("-S", "--mqsb [VALUE]", Float, "Minimum allowed value for MQSB. (Default = No filter)") do |sb|
 				args.mqsb = sb if sb != nil
 			end
-			opts.on("-A", "--adepth [VALUE]", Integer, "Minimum allowed allele depth. (Default = No filter)") do |ad|
+			opts.on("-A", "--adepth [VALUE]", Integer, "Minimum allowed allele depth (tag AD). (Default = No filter)") do |ad|
 				args.adepth = ad if ad != nil
 			end
 			opts.separator ""
@@ -249,17 +249,19 @@ def quality_filter(line_arr, gt_index, pgt_index)
 	site_qual = line_arr[5]
 	filter = line_arr[6]
 	site_info_fields = line_arr[7]
-	samples = line_arr[9..-1]
 	info_arr = site_info_fields.split(";")
+	sample_info_fields = line_arr[8].split(":")
+	samples = line_arr[9..-1]
 	samples.map!{ |element| element.split(":")}
+	$options.hap_flag ? missingdata = "." : missingdata = "./." # Some VCFs are haploid
 	genotypes = []
 	if (gt_index.nil? && pgt_index.nil?)
 		puts "** Missing genotype (GT or PGT) tags **"
 		puts "** Treating line: #{line_arr.join("\t")} as missing data **"
-		samples.each{|list| genotypes.push("./.")}
+		samples.each{|list| genotypes.push(missingdata)}
 		new_samples = []
 		samples.each{|list|
-			list.insert(0, "./.")
+			list.insert(0, missingdata)
 			new_list = list.join(":")
 			new_samples.push(new_list)
 		}
@@ -268,10 +270,21 @@ def quality_filter(line_arr, gt_index, pgt_index)
 		samples.each{|list| genotypes.push(list[gt_index])}
 	end
 	# Leave if nothing to replace
-	return line_arr if genotypes.all? {|x| x == "./."}
-	found = false
+	if genotypes.all? {|x| x == missingdata}
+		if $options.skip
+			return "all_filtered"
+		else
+			return line_arr
+		end
+	end
+	found = false # Filter ALL values from a site
+	if sample_info_fields.include?("GLE")
+		puts "** GLE not supported as of version #{VCF2ALNVER} **"
+		puts "** Treating line: #{line_arr.join("\t")} as missing data **"
+		found = true
+	end
 	found = true if site_qual.to_i < $options.qual_filter || ($options.annot_filter.include?(filter))
-	unless ($options.mq0f.nil? && $options.mqsb.nil? && $options.sample_mq.nil? && $options.site_depth.nil?) || found #Don't execute this loop if you're not trying to filter for any site-specific quality scores
+	unless ($options.mq0f.nil? && $options.mqsb.nil? && $options.site_mq.nil? && $options.site_depth.nil?) || found #Don't execute this loop if you're not trying to filter for any site-specific quality scores
 		#This loop will determine if any of your site-specific quality scores don't satisfy the specified conditions. (INFO column)
 		info_arr.each do |item|
 			if found
@@ -295,96 +308,126 @@ def quality_filter(line_arr, gt_index, pgt_index)
 			end
 		end
 	end
-	unless found || ($options.sample_mq.nil? && $options.sample_depth.nil? && $options.min_ll.nil? && $options.phred_likelihood.nil? && $options.posterior.nil? && $options.conditional.nil? && $options.hap_qual.nil? && $options.adepth.nil?)
-		sample_info_fields = line_arr[8].split(":")
-		index_hash = {}
-		#Create index hash; info fields may be ordered in any way, so we need a generalizable method to access each field at its proper position in the sample info
-		sample_info_fields.each{|v| index_hash[v] = sample_info_fields.index(v)}
-		#This bit can be sped up by removing options from the index hash if the corresponding value in $options does not exist. 
-		for sample in samples do
-			break if found
-			for field in sample_info_fields do
-				break if found
-				case field
-				when "GT", "PGT"
-					next
-				when "DP"
-					if $options.sample_depth && sample[index_hash["DP"]].to_i < $options.sample_depth
-					 	found = true
-					 	break 	
-				 	end
-			 	when "GL"
-			  		if $options.min_ll
-					 	gl_array = sample[index_hash["GL"]].split(",")
-						for element in gl_array do
-							if element.to_f < $options.min_ll
-								found = true
-								break
-							end
-						end
-					end
-				when "GLE"
-					puts "** GLE not supported as of version #{VCF2ALNVER} **"
-					puts "** Treating line: #{line_arr.join("\t")} as missing data **"
-					found = true
-					break
-				when "PQ"
-					next
-				when "PL"
-					if $options.phred_likelihood && sample[index_hash["PL"]].to_i < $options.phred_likelihood
-						found = true
-						break
-					end
-				when "GP"
-					gp_array = sample[index_hash["GP"]].split(",")
-					if $options.posterior
-						for element in gp_array do
-							if element.to_f < $options.posterior
-								found = true
-								break
-							end
-						end
-					end
-				when "GQ"
-					if $options.conditional && sample[index_hash["GQ"]].to_i < $options.conditional
-						found = true
-						break
-					end
-				when "HQ"
-					hap_array = sample[index_hash["HQ"]].split(",")
-					if $options.hap_qual
-						for element in hap_array do
-							if element.to_f < $options.hap_qual
-								found = true
-								break
-							end
-						end
-					end
-				when "MQ"
-					if $options.sample_mq && sample[index_hash["MQ"]].to_i < $options.sample_mq
-						found = true
-						break
-					end
-				when "AD"
-					if $options.adepth && sample[index_hash["AD"]].to_i < $options.adepth
-						found = true
-						break
-					end
-				end
-			end
-		end
-	end
-	# Replace filtered genotypes
 	if found
 		new_samples = []
 		samples.each{|list|
-			list[gt_index] = "./."
-			list[pgt_index] = "./." unless pgt_index.nil?
+			list[gt_index] = missingdata
+			list[pgt_index] = missingdata unless pgt_index.nil?
 			new_list = list.join(":")
 			new_samples.push(new_list)
 		}
 		line_arr[9..-1] = new_samples
-		return line_arr
+		if $options.skip
+			return "all_filtered"
+		else
+			return line_arr
+		end
+	else
+		unless ($options.sample_mq.nil? && $options.sample_depth.nil? && $options.min_ll.nil? && $options.phred_likelihood.nil? && $options.posterior.nil? && $options.conditional.nil? && $options.hap_qual.nil? && $options.adepth.nil?)
+			index_hash = {}
+			new_samples = []
+			new_genotypes = []
+			#Create index hash; info fields may be ordered in any way, so we need a generalizable method to access each field at its proper position in the sample info
+			sample_info_fields.each{|v| index_hash[v] = sample_info_fields.index(v)}
+			#This bit can be sped up by removing options from the index hash if the corresponding value in $options does not exist. 
+			for sample in samples
+				for field in sample_info_fields
+					break if sample[gt_index] == missingdata
+					case field
+					when "GT", "PGT", "PQ"
+						next
+					when "DP"
+						if $options.sample_depth && sample[index_hash["DP"]].to_i < $options.sample_depth
+						 	sample[gt_index] = missingdata
+							sample[pgt_index] = missingdata unless pgt_index.nil?
+					 	end
+					when "GQ"
+						if $options.conditional && sample[index_hash["GQ"]].to_i < $options.conditional
+							sample[gt_index] = missingdata
+							sample[pgt_index] = missingdata unless pgt_index.nil?
+						end
+					when "MQ"
+						if $options.sample_mq && sample[index_hash["MQ"]].to_i < $options.sample_mq
+							sample[gt_index] = missingdata
+							sample[pgt_index] = missingdata unless pgt_index.nil?
+						end
+					when "GL"
+			  			if $options.min_ll
+					 		gl_array = sample[index_hash["GL"]].split(",").map { |x| x.to_i }
+					 		if gl_array.max < $options.min_ll
+								sample[gt_index] = missingdata
+								sample[pgt_index] = missingdata unless pgt_index.nil?
+							end
+						end
+					when "PL"
+						if $options.phred_likelihood 
+							pl_array = sample[index_hash["PL"]].split(",").map { |x| x.to_i }
+							if pl_array.max < $options.phred_likelihood
+								sample[gt_index] = missingdata
+								sample[pgt_index] = missingdata unless pgt_index.nil?
+							end
+						end
+					when "GP"
+						if $options.posterior
+							gp_array = sample[index_hash["GP"]].split(",").map { |x| x.to_f }
+							if gp_array.max < $options.posterior
+								sample[gt_index] = missingdata
+								sample[pgt_index] = missingdata unless pgt_index.nil?
+							end
+						end
+					when "HQ"
+						if $options.hap_qual
+							hap_array = sample[index_hash["HQ"]].split(",").map { |x| x.to_i }
+							if $options.hap_flag
+								if hap_array[0] < $options.hap_qual
+									sample[gt_index] = missingdata
+									sample[pgt_index] = missingdata unless pgt_index.nil?
+								end
+							else
+								if hap_array[0] < $options.hap_qual && hap_array[1] < $options.hap_qual # If both under, set as missing data
+									sample[gt_index] = missingdata
+									sample[pgt_index] = missingdata unles pgt_index.nil?
+								elsif hap_array[0] < $options.hap_qual # If only first under, set as second haplotype
+									sample[gt_index][0] = sample[gt_index][2]
+									sample[pgt_index][0] = sample[ggt_index][2] unless pgt_index.nil?
+								elsif hap_array[1] < $options.hap_qual # if only second under, set as first haplotype
+									sample[gt_index][2] = sample[gt_index][0]
+									sample[pgt_index][2] = sample[ggt_index][0] unless pgt_index.nil?
+								end
+							end
+						end
+					when "AD"
+						if $options.adepth 
+							ad_array = sample[index_hash["AD"]].split(",").map { |x| x.to_i }
+							if $options.hap_flag
+								if ad_array[sample[gt_index].to_i] < $options.adepth # If selected allele low, discard
+									sample[gt_index] = missingdata
+									sample[pgt_index] = missingdata unless pgt_index.nil?
+								end
+							else
+								if ad_array[sample[gt_index][0].to_i] < $options.adepth && ad_array[sample[gt_index][3].to_i] < $options.adepth # If both under, set as missing data
+									sample[gt_index] = missingdata
+									sample[pgt_index] = missingdata unless pgt_index.nil?
+								elsif ad_array[sample[gt_index][0].to_i] < $options.adepth # If only first under, set as second haplotype
+									sample[gt_index][0] = sample[gt_index][2]
+									sample[pgt_index][0] = sample[ggt_index][2] unless pgt_index.nil?
+								elsif ad_array[sample[gt_index][2].to_i] < $options.adepth # if only second under, set as first haplotype
+									sample[gt_index][2] = sample[gt_index][0]
+									sample[pgt_index][2] = sample[ggt_index][0] unless pgt_index.nil?
+								end
+							end
+						end
+					end
+				end
+				new_sample = sample.join(":")
+				new_genotypes.push(sample[gt_index])
+				new_samples.push(new_sample)
+			end
+		end
+		line_arr[9..-1] = new_samples
+	end
+	if new_genotypes.all? { |x| x== missingdata }
+		return "all_filtered"
 	else
 		return line_arr
 	end
@@ -426,13 +469,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 	if line[0..1] == "#C"
 		$samples = line[0..-2].split("\t")[9..-1] # Get sample names
 	elsif line[0].chr != "#"
-		if $options.split_regions > 0 && regionval >= $options.split_regions # Change region name at break
-			region += 1
-			regionval = 0
-		end
-		regionval += 1
-		write_cycle += 1
-		line_arr = line.split("\t")
+		line_arr = line[0...-1].split("\t") # Exclude final line break
 		codes = line_arr[8].split(":") #GET PHASING LOCATION
 		pgt_index = nil
 		gt_index = nil
@@ -447,6 +484,13 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 			vars_index = 0
 		end
 		line_arr = quality_filter(line_arr, gt_index, pgt_index) # Quality filter has to be called to check for GLE
+		return index, previous_index, previous_endex, previous_name, current_locus, prev_pos, write_cycle, region, regionval if line_arr == "all_filtered"
+		if $options.split_regions > 0 && regionval >= $options.split_regions # Change region name at break
+			region += 1
+			regionval = 0
+		end
+		regionval += 1
+		write_cycle += 1
 		$options.concat ? name = "concat_aln" : name = line_arr[0]
 		name << "_region" + region.to_s if $options.split_regions > 0
 		if name != current_locus.name
