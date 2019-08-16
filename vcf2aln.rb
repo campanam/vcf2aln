@@ -68,38 +68,40 @@ class Locus
 	#-------------------------------------------------------------------------------------------
 	def print_locus
 		@length += @seqs[0].length
-		for i in 0...$samples.size
-			if $options.onehap
-				File.open($samples[i] + "_#{$options.outprefix}#{@name}.tmp.fa", 'a') do |write|
-					write.puts @seqs[i]
-				end
-			else
-				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
-					write.puts @seqs[i]
-				end
-				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
-					write.puts @alts[i]
-				end
-			end
-			if $options.maxmissing < 100.0
-				@missinghap1[i] += @seqs[i].scan("?").length
-				@missinghap2[i] += @seqs[i].scan("?").length unless $options.hap_flag
+		if @length >= $options.minlength
+			for i in 0...$samples.size
 				if $options.onehap
-					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+					File.open($samples[i] + "_#{$options.outprefix}#{@name}.tmp.fa", 'a') do |write|
+						write.puts @seqs[i]
+					end
 				else
-					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-					system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
+						write.puts @seqs[i]
+					end
+					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
+						write.puts @alts[i]
+					end
+				end
+				if $options.maxmissing < 100.0
+					@missinghap1[i] += @seqs[i].scan("?").length
+					@missinghap2[i] += @seqs[i].scan("?").length unless $options.hap_flag
+					if $options.onehap
+						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+					else
+						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+					end
 				end
 			end
-		end
-		if $options.alts
-			system("cat *#{$options.outprefix + @name}*.tmp.fa > #{$options.outprefix + @name + '.fa'}")
-		else
-			if $options.onehap
-				system("cat *#{$options.outprefix + @name}.tmp.fa > #{$options.outprefix + @name + '.fa'}")
+			if $options.alts
+				system("cat *#{$options.outprefix + @name}*.tmp.fa > #{$options.outprefix + @name + '.fa'}")
 			else
-				system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '.hap1.fa'}")
-				system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '.hap2.fa'}")
+				if $options.onehap
+					system("cat *#{$options.outprefix + @name}.tmp.fa > #{$options.outprefix + @name + '.fa'}")
+				else
+					system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '.hap1.fa'}")
+					system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '.hap2.fa'}")
+				end
 			end
 		end
 		system("rm *#{$options.outprefix + @name}*.tmp.fa")
@@ -119,6 +121,7 @@ class Parser
 		args.mincalls = 0 # Minimum number of sample calls to include site
 		args.minpercent = 0.0 # Minimum percent of sample calls to include site
 		args.maxmissing = 100.0 # Maximum percent missing data to include sequence
+		args.minlength = 1 # Minimum length of alignment to retain
 		args.onehap = false # Print only one haplotype
 		args.probps = false # Probabilistic pseudohaplotype
 		args.alts = false # Print alternate haplotypes in same file
@@ -192,6 +195,9 @@ class Parser
 			end
 			opts.on("-x","--maxmissing [VALUE]", Float, "Maximum sample percent missing data to include sequence (Default = 100.0)") do |missing|
 				args.maxmissing = missing if missing != nil
+			end
+			opts.on("-L", "--minlength [VALUE]", Integer, "Minimum alignment length to retain (Default = 1)") do |len|
+				args.minlength = len if len != nil
 			end
 			opts.on("--annotfilter [VALUE]", String, "Comma-separated list of FILTER annotations to exclude") do |annot|
 				args.annot_filter = annot.split(",") if annot != nil
