@@ -46,6 +46,7 @@ vcf2aln can also be used in a pipe. For example, it can directly convert the out
 `-m, --mincalls [VALUE]`: Minimum number of samples called to include site (Default = 0).  
 `-M, --minpercent [VALUE]`: Minimum percentage of samples called to include site (Default = 0.0).  
 `-x, --maxmissing [VALUE]`: Maximum percent missing data to include sequence (Default = 100.0).  
+`-L, --minlength [VALUE]`: Minimum alignment length to retain (Default = 1).  
 `--annotfilter [VALUE]`: Comma-separated list of FILTER annotations to exclude.  
 `-q, --qual_filter [VALUE]`: Minimum accepted value for QUAL (per site) (Default = 0.0).  
 `-y, --site_depth [VALUE]`: Minimum desired total depth for each site (Default = No filter).  
