@@ -3,6 +3,11 @@ Michael G. Campana & Jacob A. West-Roberts, 2017-2019
 Smithsonian Conservation Biology Institute  
 Contact: campanam@si.edu  
 
+### Version 0.9.0  
+Sample-specific filters no longer filter whole line  
+Completely filtered sites are excluded by the skip option  
+Renamed filters to better match standard tags  
+
 ### Version 0.8.0  
 --annotfilter option controls FILTER value filtration  
 --split_regions is now functional  
