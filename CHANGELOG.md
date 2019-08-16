@@ -6,6 +6,7 @@ Contact: campanam@si.edu
 ### Version 0.10.0  
 Probabilistic pseudohaplotype calling  
 Minimum samples called as a percentage option  
+Minimum alignment length to retain parameter  
 
 ### Version 0.9.0  
 Sample-specific filters no longer filter whole line  
