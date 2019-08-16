@@ -161,6 +161,7 @@ class Parser
 			end
 			opts.on("-O", "--onehap", "Print only one haplotype for diploid data (conflicts with -a)") do
 				args.onehap = true
+				args.alts = false
 			end
 			opts.on("--probpseudohap", "Probabilistic pseudohaplotype based on allelic depth (implies -O, conflicts with -a, -b)") do
 				args.probps = true
@@ -168,10 +169,10 @@ class Parser
 				args.alts = false
 				args.ambig = false
 			end
-			opts.on("-a", "--alts", "Print alternate haplotypes in same file") do
-				args.alts = true unless args.probps
+			opts.on("-a", "--alts", "Print alternate haplotypes in same file (conflicts with -O, --probpseudohap)") do
+				args.alts = true unless (args.probps or args.onehap)
 			end
-			opts.on("-b", "--ambig", "Print SNP sites as ambiguity codes.") do
+			opts.on("-b", "--ambig", "Print SNP sites as ambiguity codes (conflicts with --probpseudohap)") do
 				args.ambig = true unless args.probps
 			end
 			opts.on("-N", "--hap_flag", "Flag for haploid data") do 
@@ -183,10 +184,10 @@ class Parser
 			end
 			opts.separator ""
 			opts.separator "Filtration options:"
-			opts.on("-m","--mincalls [VALUE]", Integer, "Minimum number of sample calls to include site (Default = 0)") do |msnps|
+			opts.on("-m","--mincalls [VALUE]", Integer, "Minimum number of samples called to include site (Default = 0)") do |msnps|
 				args.mincalls = msnps if msnps != nil
 			end
-			opts.on("-M", "--minpercent [VALUE]", Float, "Minimum percentage of sample calls to include site (Default = 0.0)") do |mpc|
+			opts.on("-M", "--minpercent [VALUE]", Float, "Minimum percentage of samples called to include site (Default = 0.0)") do |mpc|
 				args.minpercent = mpc if mpc != nil
 			end
 			opts.on("-x","--maxmissing [VALUE]", Float, "Maximum sample percent missing data to include sequence (Default = 100.0)") do |missing|
