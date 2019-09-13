@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.10.0"
+VCF2ALNVER = "0.11.0"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2019
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -95,12 +95,16 @@ class Locus
 			end
 			if $options.alts
 				system("cat *#{$options.outprefix + @name}*.tmp.fa > #{$options.outprefix + @name + '.fa'}")
+				system("gzip #{$options.outprefix + @name + '.fa'}") if $options.gzip
 			else
 				if $options.onehap
 					system("cat *#{$options.outprefix + @name}.tmp.fa > #{$options.outprefix + @name + '.fa'}")
+					system("gzip #{$options.outprefix + @name + '.fa'}") if $options.gzip
 				else
 					system("cat *#{$options.outprefix + @name}.hap1.tmp.fa > #{$options.outprefix + @name + '.hap1.fa'}")
 					system("cat *#{$options.outprefix + @name}.hap2.tmp.fa > #{$options.outprefix + @name + '.hap2.fa'}")
+					system("gzip #{$options.outprefix + @name + '.hap1.fa'}") if $options.gzip
+					system("gzip #{$options.outprefix + @name + '.hap2.fa'}") if $options.gzip
 				end
 			end
 		end
@@ -143,6 +147,7 @@ class Parser
 		args.adepth = nil #Don't filter allele depth by default
 		args.split_regions = 0 #Don't activate region-split subroutine by default
 		args.write_cycle = 1000000 # Number of cycles before force of write-out
+		args.gzip = false # Gzip output
 		opt_parser = OptionParser.new do |opts|
 			opts.banner = "Command-line usage: ruby vcf2aln.rb [options]"
 			opts.separator ""
@@ -155,6 +160,9 @@ class Parser
 			end
 			opts.on("-o", "--outprefix [VALUE]", String, "Output alignment prefix") do |pref|
 				args.outprefix = pref + "_" if pref != nil
+			end
+			opts.on("-z", "--gzip", "Gzip output alignments") do 
+				args.gzip = true
 			end
 			opts.on("-c", "--concatenate", "Concatenate markers into single alignment") do
 				args.concat = true
@@ -683,6 +691,12 @@ def read_input
 	regionval = 0
 	if $options.pipe
 		ARGF.each_line { |line| index, previous_index, previous_endex, previous_name, current_locus, prev_pos, write_cycle, region, regionval = vcf_to_alignment(line, index, previous_index, previous_endex, previous_name, current_locus, prev_pos, write_cycle, region, regionval) }
+	elsif $options.infile[-3..-1] == ".gz"
+		Zlib::GzipReader.open($options.infile) do |vcf2aln|
+	 		while line = vcf2aln.gets
+	 			index, previous_index, previous_endex, previous_name, current_locus, prev_pos, write_cycle, region, regionval = vcf_to_alignment(line, index, previous_index, previous_endex, previous_name, current_locus, prev_pos, write_cycle, region, regionval)
+	 		end
+		end
 	else
 		File.open($options.infile, 'r') do |vcf2aln|
 	 		while line = vcf2aln.gets

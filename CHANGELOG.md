@@ -3,6 +3,9 @@ Michael G. Campana & Jacob A. West-Roberts, 2017-2019
 Smithsonian Conservation Biology Institute  
 Contact: campanam@si.edu  
 
+### Version 0.11.0  
+Read/write gzipped files  
+
 ### Version 0.10.0  
 Probabilistic pseudohaplotype calling  
 Minimum samples called as a percentage option  

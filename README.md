@@ -19,7 +19,7 @@ In the terminal:
 Optionally, vcf2aln.rb can be placed within the user’s $PATH so that it can be executed from any location. Depending on your operating system, you may need to change the shebang line in the script (first line starting with #!) to specify the path of your Ruby executable.  
 
 ## Input  
-vcf2aln requires an all-sites VCF (e.g. such as one produced using EMIT_ALL_SITES in the [Genome Analysis Toolkit](https://software.broadinstitute.org/gatk/)).  
+vcf2aln requires an all-sites VCF (e.g. such as one produced using EMIT_ALL_SITES in the [Genome Analysis Toolkit](https://software.broadinstitute.org/gatk/)). Files with the final extension ".gz" are assumed to be gzip-compressed.  
 
 ## Execution
 Execute the script using `ruby vcf2aln.rb` (or `vcf2aln.rb` if the script is in your $PATH). This will display the help screen. Basic usage is as follows:  
@@ -33,6 +33,7 @@ vcf2aln can also be used in a pipe. For example, it can directly convert the out
 `-i, --input [FILE]`: Input VCF file.  
 `--pipe`: Read data from an uncompressed VCF stream rather than a file.  
 `-o, --outprefix [VALUE]`: Output FASTA alignment prefix.  
+`-z, --gzip`: Gzip output alignments.  
 `-c, --concatenate`: Concatenate markers into single alignment (e.g. concatenate multiple separate chromosomes/contigs).  
 `-s, --skip`: Skip missing sites in VCF.  
 `-O, --onehap`: Print only one haplotype for diploid data. If phasing information is missing, it will generate a pseudohaplotype by randomly assigning one of the alleles. Conflicts with -a.  
