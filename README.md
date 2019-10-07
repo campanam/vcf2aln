@@ -37,7 +37,7 @@ vcf2aln can also be used in a pipe. For example, it can directly convert the out
 `-c, --concatenate`: Concatenate markers into single alignment (e.g. concatenate multiple separate chromosomes/contigs).  
 `-s, --skip`: Skip missing sites in VCF.  
 `-O, --onehap`: Print only one haplotype for diploid data. If phasing information is missing, it will generate a pseudohaplotype by randomly assigning one of the alleles. Conflicts with -a.  
-`--probpseudohap`: Generate a single probabilistic psuedohaplotype using allelic depth. Requires AD tag. Implies -O and conflicts with -a, -b.  
+`--probpseudohap`: Generate a single probabilistic pseudohaplotype using allelic depth. Requires AD tag. Implies -O and conflicts with -a, -b.  
 `-a, --alts`: Print alternate (pseudo)haplotypes in same file. Conflicts with -O, --probpseudohap.  
 `-b, --ambig`: Print SNP sites as ambiguity codes. Conflicts with --probpseudohap.  
 `-N, --hap_flag`: Data are haploid.  
