@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.11.0"
+VCF2ALNVER = "0.11.1"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2019
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -271,6 +271,13 @@ class Parser
 	end
 end
 #-----------------------------------------------------------------------------------------------
+def fix_name(name) # Modified from BaitsTools 1.6.5 (Campana 2019) resolve_unix_path
+	for reschar in ["\\", ";", "&", "(", ")","*","?","[","]","~",">","<","!","\"","\'", "$", " ", "|"]
+		name.gsub!(reschar, "_") # Use odd syntax because escape character causes issues with backslash in sub
+	end
+	return name
+end
+#-----------------------------------------------------------------------------------------------
 def quality_filter(line_arr, gt_index, pgt_index)
 	site_qual = line_arr[5]
 	filter = line_arr[6]
@@ -528,7 +535,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 		end
 		regionval += 1
 		write_cycle += 1
-		$options.concat ? name = "concat_aln" : name = line_arr[0]
+		$options.concat ? name = "concat_aln" : name = fix_name(line_arr[0])
 		name << "_region" + region.to_s if $options.split_regions > 0
 		if name != current_locus.name
 			current_locus.print_locus unless current_locus.name == ""
