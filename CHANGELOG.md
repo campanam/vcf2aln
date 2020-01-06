@@ -1,7 +1,11 @@
 # vcf2aln Change Log  
-Michael G. Campana & Jacob A. West-Roberts, 2017-2019  
+Michael G. Campana & Jacob A. West-Roberts, 2017-2020  
 Smithsonian Conservation Biology Institute  
 Contact: campanam@si.edu  
+
+### Version 0.11.2  
+Fixed bug when splitting regions by length that would cause misnumbering and overwriting of previous regions  
+Fixed bug for haploid data that did not properly count haploid missing data in the minimum calls filter  
 
 ### Version 0.11.1  
 Added method fix_name to resolve reserved characters in locus names  
