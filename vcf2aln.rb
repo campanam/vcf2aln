@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.11.1"
+VCF2ALNVER = "0.11.2"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2019
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -535,7 +535,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 		end
 		regionval += 1
 		write_cycle += 1
-		$options.concat ? name = "concat_aln" : name = fix_name(line_arr[0])
+		$options.concat ? name = "concat_aln" : name = fix_name(line_arr[0].dup)
 		name << "_region" + region.to_s if $options.split_regions > 0
 		if name != current_locus.name
 			current_locus.print_locus unless current_locus.name == ""
@@ -560,7 +560,15 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 			previous_name = line_arr[0]
 			region = 1
 		end
-		if $samples.size - line.scan("./.").length - line.scan(".|.").length >= $options.mincalls
+		if $options.hap_flag
+			missingness = 0
+			for genotype in line_arr[9..-1]
+				missingness += 1 if genotype.split(":")[gt_index][0] == "."
+			end
+		else
+			missingness = line.scan("./.").length + line.scan(".|.").length
+		end
+		if $samples.size - missingness >= $options.mincalls
 			variants = [line_arr[3], line_arr[4].split(",")].flatten!
 			lengths =[] # Get sequence lengths for indels
 			for var in variants
