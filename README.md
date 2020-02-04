@@ -5,7 +5,7 @@ Script to convert multi-sample VCFs to FASTA alignments without assuming the ref
 Michael G. Campana & Jacob A. West-Roberts, 2017-2020  
 
 ## License  
-The software is made available under the Smithsonian Institution [terms of use](https://wwww.si.edu/termsofuse).  
+The software is made available under the Smithsonian Institution [terms of use](https://www.si.edu/termsofuse).  
 
 ## Citation  
 Campana, M.G. & West-Roberts, J.A. 2019. vcf2aln. (https://github.com/campanam/vcf2aln)  
