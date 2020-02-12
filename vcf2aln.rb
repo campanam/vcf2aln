@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.11.2"
+VCF2ALNVER = "0.11.3"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2020
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -570,6 +570,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 		end
 		if $samples.size - missingness >= $options.mincalls
 			variants = [line_arr[3], line_arr[4].split(",")].flatten!
+			variants[variants.index("*")] = "-" if variants.include?("*")
 			lengths =[] # Get sequence lengths for indels
 			for var in variants
 				lengths.push(var.length)
@@ -618,10 +619,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 							end
 							ad_arr = new_ad
 						end
-						ad_arr_sum = 0 # Code here for backwards compatibility since macOS only has Ruby 2.0
-						for ad in ad_arr
-							ad_arr_sum += ad
-						end 
+						ad_arr_sum = ad_arr.reduce(:+) # Code here for backwards compatibility since macOS only has Ruby 2.0
 						randvar = rand(ad_arr_sum)
 						ad_sum = 0
 						for ad in ad_arr
@@ -635,7 +633,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 					else
 						randvar = rand(2)
 					end
-					if !$options.ambig or endex - index > 0 # Phase haplotypes even in ambiguity situations
+					if !$options.ambig or endex - index > 0 or variants.include?("-") # Phase haplotypes even in ambiguity situations
 						if vars[0].chr != "." # Code below uses string replacement due to multiallelic sites having same start index
 							if vars[1].chr == "|" or randvar == 0
 								current_locus.seqs[i-9][index..endex] = variants[vars[0].to_i]
