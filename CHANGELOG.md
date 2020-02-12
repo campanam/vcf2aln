@@ -3,6 +3,10 @@ Michael G. Campana & Jacob A. West-Roberts, 2017-2020
 Smithsonian Conservation Biology Institute  
 Contact: campanam@si.edu  
 
+### Version 0.11.3  
+Now compatible with GATK deletions coded by *  
+Improvement to array summation  
+
 ### Version 0.11.2  
 Fixed bug when splitting regions by length that would cause misnumbering and overwriting of previous regions  
 Fixed bug for haploid data that did not properly count haploid missing data in the minimum calls filter  
