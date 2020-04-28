@@ -8,7 +8,7 @@ Michael G. Campana & Jacob A. West-Roberts, 2017-2020
 The software is made available under the Smithsonian Institution [terms of use](https://www.si.edu/termsofuse).  
 
 ## Citation  
-Parker, L.D., Hawkins, M.T.R., Camacho-Sanchez, M., Campana, M.G., West-Roberts, J.A., Wilbert, T.R., Lim, H.C., Rockwood, L.L., Leonard, J.A. & Maldonado, J.E. 2020. High gene flow across heterogeneous tropical montane environments in a Bornean endemic small mammal. *Authorea*. (https://doi.org/10.22541/au.158757034.48320167)  
+Parker, L.D., Hawkins, M.T.R., Camacho-Sanchez, M., Campana, M.G., West-Roberts, J.A., Wilbert, T.R., Lim, H.C., Rockwood, L.L., Leonard, J.A. & Maldonado, J.E. 2020. High gene flow across heterogeneous tropical montane environments in a Bornean endemic small mammal. *Authorea*. DOI: [10.22541/au.158757034.48320167](https://doi.org/10.22541/au.158757034.48320167).  
 
 ## Installation  
 In the terminal:  
