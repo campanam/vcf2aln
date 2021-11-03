@@ -2,13 +2,14 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.11.3"
-# Michael G. Campana, Jacob A. West-Roberts, 2017-2020
+VCF2ALNVER = "0.11.4"
+# Michael G. Campana, Jacob A. West-Roberts, 2017-2021
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
 
 require 'optparse'
 require 'ostruct'
+require 'zlib'
 
 class Locus
 	attr_accessor :name, :seqs, :alts, :length
