@@ -8,7 +8,7 @@ Michael G. Campana & Jacob A. West-Roberts, 2017-2020
 The software is made available under the Smithsonian Institution [terms of use](https://www.si.edu/termsofuse).  
 
 ## Citation  
-Parker, L.D., Hawkins, M.T.R., Camacho-Sanchez, M., Campana, M.G., West-Roberts, J.A., Wilbert, T.R., Lim, H.C., Rockwood, L.L., Leonard, J.A. & Maldonado, J.E. 2020. Little genetic structure in a Bornean endemic small mammal across a steep ecological gradient. *Molecular Ecology*. DOI: [10.1111/mec.15626](https://onlinelibrary.wiley.com/doi/10.1111/mec.15626).  
+Parker, L.D., Hawkins, M.T.R., Camacho-Sanchez, M., Campana, M.G., West-Roberts, J.A., Wilbert, T.R., Lim, H.C., Rockwood, L.L., Leonard, J.A. & Maldonado, J.E. 2020. Little genetic structure in a Bornean endemic small mammal across a steep ecological gradient. *Molecular Ecology*. 29: 4074-4090. DOI: [10.1111/mec.15626](https://onlinelibrary.wiley.com/doi/10.1111/mec.15626).  
 
 ## Installation  
 In the terminal:  
