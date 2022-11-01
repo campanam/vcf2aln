@@ -1,5 +1,5 @@
 # vcf2aln Change Log  
-Michael G. Campana & Jacob A. West-Roberts, 2017-2021  
+Michael G. Campana & Jacob A. West-Roberts, 2017-2022  
 Smithsonian Conservation Biology Institute  
 Contact: campanam@si.edu  
 
