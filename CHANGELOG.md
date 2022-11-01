@@ -3,6 +3,9 @@ Michael G. Campana & Jacob A. West-Roberts, 2017-2021
 Smithsonian Conservation Biology Institute  
 Contact: campanam@si.edu  
 
+### Version 0.11.5  
+Handling for diploid missing data calls in haploid vcfs  
+
 ### Version 0.11.4  
 Fixed zlib requirement bug  
 
