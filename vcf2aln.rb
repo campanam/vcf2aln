@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.11.4"
+VCF2ALNVER = "0.11.5"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2021
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -678,7 +678,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 			else
 				for i in 9...line_arr.size
 					vars = line_arr[i].split(":")[vars_index]
-					if vars == "."
+					if vars[0] == "." # Some tools (e.g. VCFtools) output diploid missing data calls even for haploid VCFs
 						current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
 					else 
 						current_locus.seqs[i-9][index..endex] = variants[vars.to_i]
