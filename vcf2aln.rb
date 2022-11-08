@@ -229,7 +229,7 @@ class Parser
 			opts.on("-G", "--gp [VALUE]", Float, "Minimum accepted phred-scaled genotype posterior probability (tag GP). (Default = No filter)") do |post|
 				args.posterior = post if post != nil
 			end
-			opts.on("-C", "--gq [VALUE]", Float, "Minimum conditional phred-encdoed genotype quality (tag GQ). (Default = No filter)") do |condi|
+			opts.on("-C", "--gq [VALUE]", Float, "Minimum conditional phred-encoded genotype quality (tag GQ). (Default = No filter)") do |condi|
 				args.conditional = condi if condi != nil
 			end
 			opts.on("-H", "--hq [VALUE]", Integer, "Minimum allowed phred-encoded haplotype quality (tag HQ). (Default = No filter)") do |haplo|
