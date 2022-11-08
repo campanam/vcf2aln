@@ -2,7 +2,7 @@
 Script to convert multi-sample VCFs to FASTA alignments without assuming the reference sequence when data are missing. Users can apply a variety of data filters, produce phased/unphased, concatenated/split alignments, etc. VCF data can be read either from previously generated files or from piped uncompressed VCF streams.    
 
 ## Authors
-Michael G. Campana & Jacob A. West-Roberts, 2017-2020  
+Michael G. Campana & Jacob A. West-Roberts, 2017-2022  
 
 ## License  
 The software is made available under the Smithsonian Institution [terms of use](https://www.si.edu/termsofuse).  
