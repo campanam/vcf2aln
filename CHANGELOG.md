@@ -5,6 +5,7 @@ Contact: campanam@si.edu
 
 ### Version 0.11.5  
 Handling for diploid missing data calls in haploid vcfs  
+encdoed-typo correction  
 
 ### Version 0.11.4  
 Fixed zlib requirement bug  
