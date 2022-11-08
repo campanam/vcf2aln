@@ -3,7 +3,7 @@
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
 VCF2ALNVER = "0.11.5"
-# Michael G. Campana, Jacob A. West-Roberts, 2017-2021
+# Michael G. Campana, Jacob A. West-Roberts, 2017-2022
 # Smithsonian Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
 
