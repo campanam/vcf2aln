@@ -2,7 +2,7 @@
 Script to convert multi-sample VCFs to FASTA alignments without assuming the reference sequence when data are missing. Users can apply a variety of data filters, produce phased/unphased, concatenated/split alignments, etc. VCF data can be read either from previously generated files or from piped uncompressed VCF streams.    
 
 ## Authors
-Michael G. Campana & Jacob A. West-Roberts, 2017-2022  
+Michael G. Campana & Jacob A. West-Roberts, 2017-2023  
 
 ## License  
 The software is made available under the Smithsonian Institution [terms of use](https://www.si.edu/termsofuse).  
@@ -35,6 +35,7 @@ vcf2aln can also be used in a pipe. For example, it can directly convert the out
 `-o, --outprefix [VALUE]`: Output FASTA alignment prefix.  
 `-z, --gzip`: Gzip output alignments.  
 `-c, --concatenate`: Concatenate markers into single alignment (e.g. concatenate multiple separate chromosomes/contigs).  
+`--partition`: Output partition table for concatenated alignments. Coordinates correspond to beginning and ending of aligned bases from a single contig.  
 `-s, --skip`: Skip missing sites in VCF.  
 `-O, --onehap`: Print only one haplotype for diploid data. If phasing information is missing, it will generate a pseudohaplotype by randomly assigning one of the alleles. Conflicts with -a.  
 `--probpseudohap`: Generate a single probabilistic pseudohaplotype using allelic depth. Requires AD tag. Implies -O and conflicts with -a, -b.  

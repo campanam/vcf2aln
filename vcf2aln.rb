@@ -2,9 +2,9 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.11.5"
-# Michael G. Campana, Jacob A. West-Roberts, 2017-2022
-# Smithsonian Conservation Biology Institute
+VCF2ALNVER = "0.12.0"
+# Michael G. Campana, Jacob A. West-Roberts, 2017-2023
+# Smithsonian's National Zoo and Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
 
 require 'optparse'
@@ -111,6 +111,16 @@ class Locus
 		end
 		system("rm *#{$options.outprefix + @name}*.tmp.fa")
 	end
+	#-------------------------------------------------------------------------------------------
+	def write_partitions
+		@partstart ||= 1 # Start bp of the partition
+		@partition ||= 1 # Partition ID
+		File.open("#{$options.outprefix}#{@name}.partitions", 'a') do |write|
+			write.puts 'DNA, part' + @partition.to_s + ' = ' + @partstart.to_s + "-" + @length.to_s
+		end
+		@partstart = @length + 1
+		@partition += 1
+	end
 end
 #-----------------------------------------------------------------------------------------------
 class Parser
@@ -122,6 +132,7 @@ class Parser
 		args.outprefix = "" # Output prefix
 		args.hap_flag = false
 		args.concat = false # Concatenate markers into single alignment
+		args.partition = false # Output partition file for concatenated alignment
 		args.skip = false # Skip missing sites in vcf
 		args.mincalls = 0 # Minimum number of sample calls to include site
 		args.minpercent = 0.0 # Minimum percent of sample calls to include site
@@ -167,6 +178,9 @@ class Parser
 			end
 			opts.on("-c", "--concatenate", "Concatenate markers into single alignment") do
 				args.concat = true
+			end
+			opts.on("--partition", "Partition concatenated alignment by contig") do
+				args.partition = true
 			end
 			opts.on("-s", "--skip", "Skip missing sites in VCF") do
 				args.skip = true
@@ -554,6 +568,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 		end
 		if line_arr[0] != previous_name # Reset indexes for concatenated alignments
 			current_locus.write_seqs
+			current_locus.write_partitions if $options.partition
 			index = -1
 			write_cycle = 1
 			previous_index = -1
@@ -719,6 +734,7 @@ def read_input
 		end
 	end
 	current_locus.print_locus # Print final alignment
+	current_locus.write_partitions if $options.partition
 end
 #-----------------------------------------------------------------------------------------------
 ARGV[0] ||= "-h"

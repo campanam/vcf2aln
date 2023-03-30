@@ -1,7 +1,10 @@
 # vcf2aln Change Log  
-Michael G. Campana & Jacob A. West-Roberts, 2017-2022  
-Smithsonian Conservation Biology Institute  
+Michael G. Campana & Jacob A. West-Roberts, 2017-2023  
+Smithsonian's National Zoo and Conservation Biology Institute  
 Contact: campanam@si.edu  
+
+### Version 0.12.0  
+Added option to output contig partition table for concatenated alignments  
 
 ### Version 0.11.5  
 Handling for diploid missing data calls in haploid vcfs  
