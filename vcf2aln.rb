@@ -567,7 +567,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 			regionval = 1
 		end
 		if line_arr[0] != previous_name # Reset indexes for concatenated alignments
-			if current_locus != ''
+			if current_locus.name != ""
 				current_locus.write_seqs
 				current_locus.write_partitions if $options.partition
 			end
