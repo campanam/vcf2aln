@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.12.0"
+VCF2ALNVER = "0.12.1"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2023
 # Smithsonian's National Zoo and Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -560,15 +560,17 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 				seqs.push("")
 				alts.push("")
 			end
-			current_locus = Locus.new(name, seqs, alts, region)
+			current_locus = Locus.new(name, seqs, alts)
 			index = -1 # Set internal start index
 			previous_index = -1 # Index of previous ending base
 			previous_endex = 0 # End index of indels
 			regionval = 1
 		end
 		if line_arr[0] != previous_name # Reset indexes for concatenated alignments
-			current_locus.write_seqs
-			current_locus.write_partitions if $options.partition
+			if current_locus != ''
+				current_locus.write_seqs
+				current_locus.write_partitions if $options.partition
+			end
 			index = -1
 			write_cycle = 1
 			previous_index = -1
