@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.12.1"
+VCF2ALNVER = "0.13.0"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2023
 # Smithsonian's National Zoo and Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -79,8 +79,10 @@ class Locus
 					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
 						write.puts @seqs[i]
 					end
-					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
-						write.puts @alts[i]
+					unless ($options.includeref && $options.alts && i == $samples.size - 1) # Avoid writing duplicate reference sequence
+						File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
+							write.puts @alts[i]
+						end
 					end
 				end
 				if $options.maxmissing < 100.0
@@ -130,6 +132,7 @@ class Parser
 		args.infile = "" # Primary input file
 		args.pipe = false # Read data from a pipe rather than an input file
 		args.outprefix = "" # Output prefix
+		args.includeref = false # Include reference sequence in final alignment
 		args.hap_flag = false
 		args.concat = false # Concatenate markers into single alignment
 		args.partition = false # Output partition file for concatenated alignment
@@ -172,6 +175,9 @@ class Parser
 			end
 			opts.on("-o", "--outprefix [VALUE]", String, "Output alignment prefix") do |pref|
 				args.outprefix = pref + "_" if pref != nil
+			end
+			opts.on("-I", "--includeref", "Include reference sequence in final alignment") do |iref|
+				args.includeref = iref
 			end
 			opts.on("-z", "--gzip", "Gzip output alignments") do 
 				args.gzip = true
@@ -560,6 +566,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 				seqs.push("")
 				alts.push("")
 			end
+			seqs.push("") if $options.includeref # Add additional slot for reference sequence if needed
 			current_locus = Locus.new(name, seqs, alts)
 			index = -1 # Set internal start index
 			previous_index = -1 # Index of previous ending base
@@ -701,6 +708,9 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 						current_locus.seqs[i-9][index..endex] = variants[vars.to_i]
 					end
 				end
+			end
+			if $options.includeref
+				current_locus.seqs[-1][index..endex] = variants[0]
 			end
 			previous_index = current_base
 			previous_endex = current_base + lengths.max - 1  if current_base + lengths.max - 1 > previous_endex

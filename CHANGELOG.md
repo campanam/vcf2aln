@@ -3,6 +3,9 @@ Michael G. Campana & Jacob A. West-Roberts, 2017-2023
 Smithsonian's National Zoo and Conservation Biology Institute  
 Contact: campanam@si.edu  
 
+### Version 0.13.0  
+Added option to output reference sequence as part of the alignment  
+
 ### Version 0.12.1  
 Fixed glitch where the region ID was added to the sequence length value  
 Fixed glitch outputting a zero-length partition at beginning of table  

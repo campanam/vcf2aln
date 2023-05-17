@@ -33,6 +33,7 @@ vcf2aln can also be used in a pipe. For example, it can directly convert the out
 `-i, --input [FILE]`: Input VCF file.  
 `--pipe`: Read data from an uncompressed VCF stream rather than a file.  
 `-o, --outprefix [VALUE]`: Output FASTA alignment prefix.  
+`-I, --includeref`: Include reference sequence in final alignment.  
 `-z, --gzip`: Gzip output alignments.  
 `-c, --concatenate`: Concatenate markers into single alignment (e.g. concatenate multiple separate chromosomes/contigs).  
 `--partition`: Output partition table for concatenated alignments. Coordinates correspond to beginning and ending of aligned bases from a single contig.  
