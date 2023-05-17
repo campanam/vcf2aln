@@ -22,7 +22,9 @@ class Locus
 		@missinghap1 = []
 		@missinghap2 = []
 		unless @name == ""
-			for sample in $samples
+			samples = $samples.dup
+			samples.push("REF") if $options.includeref
+			for sample in samples
 				if $options.onehap
 					File.open(sample + "_#{$options.outprefix}#{@name}.tmp.fa", 'w') do |write|
 						write.puts ">" + sample
@@ -43,16 +45,18 @@ class Locus
 	#-------------------------------------------------------------------------------------------
 	def write_seqs
 		@length += @seqs[0].length
-		for i in 0...$samples.size
+		samples = $samples.dup
+		samples.push("REF") if $options.includeref
+		for i in 0...samples.size
 			if $options.onehap
-				File.open($samples[i] + "_#{$options.outprefix}#{@name}.tmp.fa", 'a') do |write|
+				File.open(samples[i] + "_#{$options.outprefix}#{@name}.tmp.fa", 'a') do |write|
 					write << @seqs[i]
 				end
 			else
-				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
+				File.open(samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
 					write << @seqs[i]
 				end
-				File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
+				File.open(samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
 					write << @alts[i]
 				end
 			end
@@ -68,19 +72,21 @@ class Locus
 	end
 	#-------------------------------------------------------------------------------------------
 	def print_locus
+		samples = $samples.dup
+		samples.push("REF") if $options.includeref
 		@length += @seqs[0].length
 		if @length >= $options.minlength
-			for i in 0...$samples.size
+			for i in 0...samples.size
 				if $options.onehap
-					File.open($samples[i] + "_#{$options.outprefix}#{@name}.tmp.fa", 'a') do |write|
+					File.open(samples[i] + "_#{$options.outprefix}#{@name}.tmp.fa", 'a') do |write|
 						write.puts @seqs[i]
 					end
 				else
-					File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
+					File.open(samples[i] + "_#{$options.outprefix}#{@name}.hap1.tmp.fa", 'a') do |write|
 						write.puts @seqs[i]
 					end
-					unless ($options.includeref && $options.alts && i == $samples.size - 1) # Avoid writing duplicate reference sequence
-						File.open($samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
+					unless ($options.includeref && $options.alts && i == samples.size - 1) # Avoid writing duplicate reference sequence
+						File.open(samples[i] + "_#{$options.outprefix}#{@name}.hap2.tmp.fa", 'a') do |write|
 							write.puts @alts[i]
 						end
 					end
@@ -89,10 +95,10 @@ class Locus
 					@missinghap1[i] += @seqs[i].scan("?").length
 					@missinghap2[i] += @seqs[i].scan("?").length unless $options.hap_flag
 					if $options.onehap
-						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+						system("rm #{samples[i] + '_' + $options.outprefix + @name}.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
 					else
-						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
-						system("rm #{$samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+						system("rm #{samples[i] + '_' + $options.outprefix + @name}.hap1.tmp.fa") if @missinghap1[i].to_f/@length.to_f * 100.0 > $options.maxmissing
+						system("rm #{samples[i] + '_' + $options.outprefix + @name}.hap2.tmp.fa") if @missinghap2[i].to_f/@length.to_f * 100.0 > $options.maxmissing
 					end
 				end
 			end
@@ -566,7 +572,10 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 				seqs.push("")
 				alts.push("")
 			end
-			seqs.push("") if $options.includeref # Add additional slot for reference sequence if needed
+			if $options.includeref # Add additional slot for reference sequence if needed
+				seqs.push("")
+				alts.push("")
+			end
 			current_locus = Locus.new(name, seqs, alts)
 			index = -1 # Set internal start index
 			previous_index = -1 # Index of previous ending base
@@ -711,6 +720,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 			end
 			if $options.includeref
 				current_locus.seqs[-1][index..endex] = variants[0]
+				current_locus.alts[-1][index..endex] = variants[0]
 			end
 			previous_index = current_base
 			previous_endex = current_base + lengths.max - 1  if current_base + lengths.max - 1 > previous_endex
