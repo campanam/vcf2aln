@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.13.0"
+VCF2ALNVER = "0.13.1"
 # Michael G. Campana, Jacob A. West-Roberts, 2017-2023
 # Smithsonian's National Zoo and Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
@@ -619,10 +619,14 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 			end
 			current_base = line_arr[1].to_i # Set starting base position	
 			if current_base > previous_endex
-				for i in 0...$samples.size
-					unless $options.skip # Adjust for missing bases
+				unless $options.skip # Adjust for missing bases
+					for i in 0...$samples.size
 						current_locus.seqs[i] << "?" * (current_base - 1 - previous_endex)
 						current_locus.alts[i] << "?" * (current_base - 1 - previous_endex)
+					end
+					if $options.includeref
+						current_locus.seqs[-1] << "?" * (current_base - 1 - previous_endex)
+						current_locus.alts[-1] << "?" * (current_base - 1 - previous_endex)
 					end
 				end
 				if write_cycle >= $options.write_cycle
@@ -637,6 +641,10 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 				current_locus.seqs[i] << "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
 				current_locus.alts[i] << "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
 			end
+			if $options.includeref
+				current_locus.seqs[-1] << "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
+				current_locus.alts[-1] << "?" * lengths.max * (current_base - previous_endex) if current_base > previous_endex
+			end 
 			index += current_base - previous_index
 			endex = index + lengths.max - 1 # Sequence end index
 			unless $options.hap_flag #Accounting for ploidy

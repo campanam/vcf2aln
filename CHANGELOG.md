@@ -3,6 +3,9 @@ Michael G. Campana & Jacob A. West-Roberts, 2017-2023
 Smithsonian's National Zoo and Conservation Biology Institute  
 Contact: campanam@si.edu  
 
+### Version 0.13.1  
+Fixed bug in reference-inclusion if missing sites are not skipped  
+
 ### Version 0.13.0  
 Added option to output reference sequence as part of the alignment  
 
