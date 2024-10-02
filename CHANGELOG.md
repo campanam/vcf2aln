@@ -1,7 +1,9 @@
 # vcf2aln Change Log  
-Michael G. Campana & Jacob A. West-Roberts, 2017-2023  
+Michael G. Campana & Jacob A. West-Roberts, 2017-2024  
 Smithsonian's National Zoo and Conservation Biology Institute  
 Contact: campanam@si.edu  
+### Version 0.13.2  
+Added --inferref option to infer reference when base is missing  
 
 ### Version 0.13.1  
 Fixed bug in reference-inclusion if missing sites are not skipped  

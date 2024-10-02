@@ -2,8 +2,8 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.13.1"
-# Michael G. Campana, Jacob A. West-Roberts, 2017-2023
+VCF2ALNVER = "0.13.2"
+# Michael G. Campana, Jacob A. West-Roberts, 2017-2024
 # Smithsonian's National Zoo and Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
 
@@ -139,6 +139,7 @@ class Parser
 		args.pipe = false # Read data from a pipe rather than an input file
 		args.outprefix = "" # Output prefix
 		args.includeref = false # Include reference sequence in final alignment
+		args.inferref = false # Infer reference when base is missing
 		args.hap_flag = false
 		args.concat = false # Concatenate markers into single alignment
 		args.partition = false # Output partition file for concatenated alignment
@@ -182,8 +183,11 @@ class Parser
 			opts.on("-o", "--outprefix [VALUE]", String, "Output alignment prefix") do |pref|
 				args.outprefix = pref + "_" if pref != nil
 			end
-			opts.on("-I", "--includeref", "Include reference sequence in final alignment") do |iref|
-				args.includeref = iref
+			opts.on("-I", "--includeref", "Include reference sequence in final alignment") do
+				args.includeref = true
+			end
+			opts.on("--inferref", "Infer reference when base is missing") do
+				args.inferref = true
 			end
 			opts.on("-z", "--gzip", "Gzip output alignments") do 
 				args.gzip = true
@@ -486,7 +490,7 @@ def quality_filter(line_arr, gt_index, pgt_index)
 		end
 		line_arr[9..-1] = new_samples
 	end
-	if new_genotypes.all? { |x| x== missingdata }
+	if new_genotypes.all? { |x| x == missingdata }
 		return "all_filtered"
 	else
 		return line_arr
@@ -683,10 +687,15 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 								current_locus.alts[i-9][index..endex] = variants[vars[0].to_i]
 							end
 						else
-							if vars[1].chr == "|" or randvar == 0
-								current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
-							else
-								current_locus.alts[i-9][index..endex] = "?" * (endex - index + 1)
+							if $options.inferref
+								current_locus.seqs[i-9][index..endex] = variants[0].downcase
+								current_locus.alts[i-9][index..endex] = variants[0].downcase
+							else	
+								if vars[1].chr == "|" or randvar == 0
+									current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
+								else
+									current_locus.alts[i-9][index..endex] = "?" * (endex - index + 1)
+								end
 							end
 						end
 						if vars[2].chr != "."
@@ -696,15 +705,20 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 								current_locus.seqs[i-9][index..endex] = variants[vars[2].to_i]
 							end
 						else
-							if vars[1].chr == "|" or randvar == 1
-								current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
+							if $options.inferref # This looks like it writes over and may happen twice in some cases
+								current_locus.seqs[i-9][index..endex] = variants[0].downcase
+								current_locus.alts[i-9][index..endex] = variants[0].downcase
 							else
-								current_locus.alts[i-9][index..endex] = "?" * (endex - index + 1)
+								if vars[1].chr == "|" or randvar == 1
+									current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
+								else
+									current_locus.alts[i-9][index..endex] = "?" * (endex - index + 1)
+								end
 							end
 						end
 					elsif $options.ambig
 						if vars[0] == "." and vars[2] == "."
-							code = "?"
+							$options.inferref ? code = variants[0].downcase : code = "?"
 						elsif vars[0] == "."
 							code = variants[vars[2].to_i]
 						elsif vars[1] == "."
@@ -720,7 +734,11 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 				for i in 9...line_arr.size
 					vars = line_arr[i].split(":")[vars_index]
 					if vars[0] == "." # Some tools (e.g. VCFtools) output diploid missing data calls even for haploid VCFs
-						current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
+						if $options.inferref
+							current_locus.seqs[i-9][index..endex] = variants[0].downcase
+						else
+							current_locus.seqs[i-9][index..endex] = "?" * (endex - index + 1)
+						end
 					else 
 						current_locus.seqs[i-9][index..endex] = variants[vars.to_i]
 					end
