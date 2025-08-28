@@ -53,7 +53,7 @@ class Locus
 					break
 				end
 			end
-			if delete_base && !$options.one_hap # Alos check alts if two haplotypes
+			if delete_base && !$options.onehap # Alos check alts if two haplotypes
 				for j in 0 ... @alts.size
 					if @alts[j][i].upcase != init_base
 						delete_base = false
@@ -65,7 +65,7 @@ class Locus
 				for j in 0 ... @seqs.size
 					@seqs[j][i] = '%'
 				end
-				if !$options.one_hap
+				if !$options.onehap
 					for j in 0 ... @alts.size
 						@alts[j][i] = '%'
 					end
