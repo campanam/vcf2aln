@@ -162,11 +162,13 @@ class Locus
 	def write_partitions
 		@partstart ||= 1 # Start bp of the partition
 		@partition ||= 1 # Partition ID
-		File.open("#{$options.outprefix}#{@name}.partitions", 'a') do |write|
-			write.puts 'DNA, part' + @partition.to_s + ' = ' + @partstart.to_s + "-" + @length.to_s
+		unless $partstart > @length # Handling for when all invariant sites in a partition removed (rare edge case)
+			File.open("#{$options.outprefix}#{@name}.partitions", 'a') do |write|
+				write.puts 'DNA, part' + @partition.to_s + ' = ' + @partstart.to_s + "-" + @length.to_s
+			end
+			@partstart = @length + 1
+			@partition += 1
 		end
-		@partstart = @length + 1
-		@partition += 1
 	end
 end
 #-----------------------------------------------------------------------------------------------
