@@ -612,7 +612,7 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 		regionval += 1
 		write_cycle += 1
 		$options.concat ? name = "concat_aln" : name = fix_name(line_arr[0].dup)
-		region = 1 if line_arr[0] != previous_name # Bug fix to prevent writing a high numbered region
+		region = 1 if line_arr[0] != previous_name && !$options.concat # Bug fix to prevent region (over)writing bugs
 		name << "_region" + region.to_s if $options.split_regions > 0
 		if name != current_locus.name
 			current_locus.print_locus unless current_locus.name == ""
@@ -642,7 +642,6 @@ def vcf_to_alignment(line, index, previous_index, previous_endex, previous_name,
 			previous_index = -1
 			previous_endex = 0
 			previous_name = line_arr[0]
-			region = 1
 		end
 		if $options.hap_flag
 			missingness = 0

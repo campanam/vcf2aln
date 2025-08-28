@@ -5,6 +5,7 @@ Contact: campanam@si.edu
 
 ### Version 0.13.4  
 Fixed a bug in the region splits that caused a single bp alignment at the changing of chromosomes  
+Fixed a bug when using region splitting with concatenation that caused the regions to overwrite  
 
 ### Version 0.13.3  
 Added -V option to remove invariant sites after MSA conversion  
