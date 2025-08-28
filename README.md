@@ -2,7 +2,7 @@
 Script to convert multi-sample VCFs to FASTA alignments without assuming the reference sequence when data are missing. Users can apply a variety of data filters, produce phased/unphased, concatenated/split alignments, etc. VCF data can be read either from previously generated files or from piped uncompressed VCF streams.    
 
 ## Authors
-Michael G. Campana & Jacob A. West-Roberts, 2017-2024  
+Michael G. Campana & Jacob A. West-Roberts, 2017-2025  
 
 ## License  
 The software is made available under the Smithsonian Institution [terms of use](https://www.si.edu/termsofuse).  
@@ -50,6 +50,7 @@ vcf2aln can also be used in a pipe. For example, it can directly convert the out
 `-m, --mincalls [VALUE]`: Minimum number of samples called to include site (Default = 0).  
 `-M, --minpercent [VALUE]`: Minimum percentage of samples called to include site (Default = 0.0).  
 `-x, --maxmissing [VALUE]`: Maximum percent missing data to include sequence (Default = 100.0).  
+`-V, --variant`: Remove invariant sites from final multiple species alignment. If two haplotypes are output, option will look for invariant sites across both haplotypes.  
 `-L, --minlength [VALUE]`: Minimum alignment length to retain (Default = 1).  
 `--annotfilter [VALUE]`: Comma-separated list of FILTER annotations to exclude.  
 `-q, --qual_filter [VALUE]`: Minimum accepted value for QUAL (per site) (Default = 0.0).  

@@ -1,7 +1,11 @@
 # vcf2aln Change Log  
-Michael G. Campana & Jacob A. West-Roberts, 2017-2024  
+Michael G. Campana & Jacob A. West-Roberts, 2017-2025  
 Smithsonian's National Zoo and Conservation Biology Institute  
 Contact: campanam@si.edu  
+
+### Version 0.13.3  
+Added -V option to remove invariant sites after MSA conversion  
+
 ### Version 0.13.2  
 Added --inferref option to infer reference when base is missing  
 

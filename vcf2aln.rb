@@ -2,8 +2,8 @@
 
 #-----------------------------------------------------------------------------------------------
 # vcf2aln
-VCF2ALNVER = "0.13.2"
-# Michael G. Campana, Jacob A. West-Roberts, 2017-2024
+VCF2ALNVER = "0.13.3"
+# Michael G. Campana, Jacob A. West-Roberts, 2017-2025
 # Smithsonian's National Zoo and Conservation Biology Institute
 #-----------------------------------------------------------------------------------------------
 
@@ -74,6 +74,33 @@ class Locus
 	def print_locus
 		samples = $samples.dup
 		samples.push("REF") if $options.includeref
+		if $options.variant
+			for i in 0 ... @seqs[0].length
+				delete_base = true # Flag to delete invariant sites. Defaults to true
+				init_base = @seqs[0][i].upcase # Initial base for comparison
+				for j in 0 ... @seqs.size
+					if @seqs[j][i].upcase != init_base
+						delete_base = false
+						break
+					end
+				end
+				if delete_base && !$options.one_hap # Alos check alts if two haplotypes
+					for j in 0 ... @alts.size
+						if @alts[j][i].upcase != init_base
+						delete_base = false
+						break
+					end
+				end
+				if delete_base
+					for j in o ... @seqs.size
+						@seqs[j][i] = ''
+					end
+					if !$options.one_hap
+						@alts[j][i] = ''
+					end
+				end
+			end
+		end
 		@length += @seqs[0].length
 		if @length >= $options.minlength
 			for i in 0...samples.size
@@ -147,6 +174,7 @@ class Parser
 		args.mincalls = 0 # Minimum number of sample calls to include site
 		args.minpercent = 0.0 # Minimum percent of sample calls to include site
 		args.maxmissing = 100.0 # Maximum percent missing data to include sequence
+		args.variant = false # Remove invariant sites from final MSA
 		args.minlength = 1 # Minimum length of alignment to retain
 		args.onehap = false # Print only one haplotype
 		args.probps = false # Probabilistic pseudohaplotype
@@ -234,6 +262,9 @@ class Parser
 			end
 			opts.on("-x","--maxmissing [VALUE]", Float, "Maximum sample percent missing data to include sequence (Default = 100.0)") do |missing|
 				args.maxmissing = missing if missing != nil
+			end
+			opts.on("-V", "--variant", Float, "Remove invariant sites from final MSA") do |variant|
+				args.variant = true
 			end
 			opts.on("-L", "--minlength [VALUE]", Integer, "Minimum alignment length to retain (Default = 1)") do |len|
 				args.minlength = len if len != nil
