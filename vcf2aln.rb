@@ -76,7 +76,7 @@ class Locus
 			@seqs[j].delete!('%')
 		end
 		for j in 0 ... @alts.size
-			@alts[j].delete!(%)
+			@alts[j].delete!('%')
 		end
 	end
 	#-------------------------------------------------------------------------------------------
