@@ -61,14 +61,22 @@ class Locus
 					end
 				end
 			end
-			if delete_base
-				for j in o ... @seqs.size
-					@seqs[j][i] = ''
+			if delete_base # Mark sites for later deletion while retaining string length for iteration
+				for j in 0 ... @seqs.size
+					@seqs[j][i] = '%'
 				end
 				if !$options.one_hap
-					@alts[j][i] = ''
+					for j in 0 ... @alts.size
+						@alts[j][i] = '%'
+					end
 				end
 			end
+		end
+		for j in 0 ... @seqs.size
+			@seqs[j].delete!('%')
+		end
+		for j in 0 ... @alts.size
+			@alts[j].delete!(%)
 		end
 	end
 	#-------------------------------------------------------------------------------------------
