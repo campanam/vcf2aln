@@ -3,6 +3,9 @@ Michael G. Campana & Jacob A. West-Roberts, 2017-2025
 Smithsonian's National Zoo and Conservation Biology Institute  
 Contact: campanam@si.edu  
 
+### Version 0.13.4  
+Fixed a bug in the region splits that caused a single bp alignment at the changing of chromosomes  
+
 ### Version 0.13.3  
 Added -V option to remove invariant sites after MSA conversion  
 
