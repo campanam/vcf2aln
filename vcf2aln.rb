@@ -43,10 +43,40 @@ class Locus
 		end
 	end
 	#-------------------------------------------------------------------------------------------
+	def remove_invariants # Remove invariant sites from MSA
+		for i in 0 ... @seqs[0].length
+			delete_base = true # Flag to delete invariant sites. Defaults to true
+			init_base = @seqs[0][i].upcase # Initial base for comparison
+			for j in 0 ... @seqs.size
+				if @seqs[j][i].upcase != init_base
+					delete_base = false
+					break
+				end
+			end
+			if delete_base && !$options.one_hap # Alos check alts if two haplotypes
+				for j in 0 ... @alts.size
+					if @alts[j][i].upcase != init_base
+						delete_base = false
+						break
+					end
+				end
+			end
+			if delete_base
+				for j in o ... @seqs.size
+					@seqs[j][i] = ''
+				end
+				if !$options.one_hap
+					@alts[j][i] = ''
+				end
+			end
+		end
+	end
+	#-------------------------------------------------------------------------------------------
 	def write_seqs
-		@length += @seqs[0].length
 		samples = $samples.dup
 		samples.push("REF") if $options.includeref
+		remove_invariants if $options.variant
+		@length += @seqs[0].length
 		for i in 0...samples.size
 			if $options.onehap
 				File.open(samples[i] + "_#{$options.outprefix}#{@name}.tmp.fa", 'a') do |write|
@@ -74,33 +104,7 @@ class Locus
 	def print_locus
 		samples = $samples.dup
 		samples.push("REF") if $options.includeref
-		if $options.variant
-			for i in 0 ... @seqs[0].length
-				delete_base = true # Flag to delete invariant sites. Defaults to true
-				init_base = @seqs[0][i].upcase # Initial base for comparison
-				for j in 0 ... @seqs.size
-					if @seqs[j][i].upcase != init_base
-						delete_base = false
-						break
-					end
-				end
-				if delete_base && !$options.one_hap # Alos check alts if two haplotypes
-					for j in 0 ... @alts.size
-						if @alts[j][i].upcase != init_base
-						delete_base = false
-						break
-					end
-				end
-				if delete_base
-					for j in o ... @seqs.size
-						@seqs[j][i] = ''
-					end
-					if !$options.one_hap
-						@alts[j][i] = ''
-					end
-				end
-			end
-		end
+		remove_invariants if $options.variant
 		@length += @seqs[0].length
 		if @length >= $options.minlength
 			for i in 0...samples.size
